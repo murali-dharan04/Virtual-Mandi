@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "silver-tape-489018-p6",
+  "private_key_id": "5a322437328050a48fe56d467f5da4ee6cf21f11",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCXmxkR0QRYEK6a\nvkmyJypLUYiUgibGGeEWifZwJ+KEnBVaxkt9ZVbl7b8urFJz2jcc1gEX1aZfD2jA\nwrXStTeeDt1DbAT3sa6+FlMUDT/0J1mEKa8/wDghryBYvZsszMvJx7Pme6B44kGo\na4lKtCWKUZmpV7kix/9+iNWs+6xWL1rGOWOvw58k/L6Y/M9YifZdXDshtW9d0WHY\n6QqC64U0v4c5tmDzC3DkDQR3vcdBBewAlMHIfZCWkwTWVKceca5Bee5Q8vyT8SCS\nvxTUa4hYhFLgaJ5+UhxyZremBG0MzPcPyChB+4U4rw2EgP5N94cbcseJIstUdxba\n8lkN7zpbAgMBAAECggEAPi+OTvKPd5gQJsUa8YqDHLXq8g+Y2/VNkLMydLrHfWGQ\nmNVxrZPd2x50Jy7j+0VtCdT2SdKHFcL6UucLMczHbXvnYnpyZy9o3+vEVBtDOmDR\npRZ8Hgg4fgiZmgzcE7pFdRUHQ+k935ffGrhRbmUKaPwjrYSgGhYzRLHYA8aP4CGW\n0ETy+Ul4TFIYQHfn1U8EBwzjM/9t/5E2zujn+FbtFqZZLdLf6ilHHrOfmbZES6mN\nYmXu3ZWwXPABVvcmk20/phV4/hTUFtLJGMXC30UZc3Y7mJDc9PEWO1oA5TTyCz8b\nl84jDo/bC5RerVdBuB4ztGN1Zoqk/niMN7taXsXRgQKBgQDJYAgYMmL5QkC3wn8Q\noTNiqWtoIX+5wH+9ezPwfwAHWroiJrXY7TIh6rj53OFXW6K6I1N1Xp+STyPZuhdB\n4caHuyw2cWlrOMKO/yXSmKhUPTrw0WI4ROtvzIfuDUw2QRKhdxFXpOrCM5OM3cDK\n8r3CJs6gwWMLs3gXEEBKmL+RuwKBgQDAuvguuk1Wzs70A8z0jFfDn1yzEioSfkzW\nvfg7KbLy6eRVDgLvA8ywDXja1+fJ3vhpbCpMNWicrip8MyXSFJ22ca9WvedK43fb\n9MiEBzu9dmM82pYgYjd3fF3JA359/RqMOzzpNu5ZW2RtkeB0bJPXLV5oA3VbxzAm\nn9Odatef4QKBgAOltJ/Tkc1X8NojMK/5a3fW/7YEHU8c+HNTHu61Lifz8bkaoGKM\ncUMCAFWuNXqik0Dx0NooW5WHz2trHm64CyN8NWHLDhC+F3AFmQbGcw4LidzAvhms\nzeLZfoDGRuIYraC1CmBfAU2BJ6P+hDZozR0OHOH2frfAiWVJixCO0bFvAoGBAK7N\npeYz4YuXfYtCmzU+ySdLtjdQhUpKtYSbvrZiZsT9sLQYRj7k8lTHk1LiOoAVNLfh\nfCes1Voueag2d9ooCrd8OyzwhwScdYzRYsClEuEPrIh4NWvfyTEdYq679ZFt7BM+\nc0uPH/V5+AeNJMhT5m9m3dZ3NI1uh1Sw561CR5nhAoGAFNWyk4UgJlwpH+jGSFbw\ndNbE9uj23R45JtRXCYwA8yFBwTFfkAu4moCklGGUk9Q5vWJU8UhLAw9lBBOxz0CW\nwNbg1mR/7jV/+rtnLBPKAqa0yrfIDcmzCwAlR2Dd+9SMD8DfNMjIwUBkz0OwmEkG\nf7FiLB9aFmaGV56yrhx4TOI=\n-----END PRIVATE KEY-----\n",
+  "client_email": "vision-ai-service@silver-tape-489018-p6.iam.gserviceaccount.com",
+  "client_id": "106453983637154117778",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/vision-ai-service%40silver-tape-489018-p6.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

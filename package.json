@@ -1,0 +1,13 @@
+{
+    "name": "virtual-mandi",
+    "version": "1.0.0",
+    "scripts": {
+        "dev": "concurrently --names \"BACKEND,BUYER,SELLER\" --prefix-colors \"green,yellow,magenta\" \"npm run backend\" \"npm run buyer\" \"npm run seller\"",
+        "backend": "cd Backend && ..\\.venv\\Scripts\\python.exe app.py",
+        "buyer": "cd \"Frontend/Buyer App\" && npm run dev",
+        "seller": "cd \"Frontend/Seller App\" && npm run dev"
+    },
+    "devDependencies": {
+        "concurrently": "^8.2.2"
+    }
+}

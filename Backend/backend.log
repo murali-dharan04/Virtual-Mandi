@@ -1,0 +1,228 @@
+[2026-03-02 23:31:37.461393] Registering user with data: {'name': 'murali', 'email': 'murali@gmail.com', 'password': '147258', 'location': 'tamilnadu ', 'role': 'farmer'}
+[2026-03-02 23:31:37.936333] User murali@gmail.com registered successfully with ID 69a5d081ce0095c3e4cbea31
+[2026-03-02 23:31:39.198658] Using Mock Weather Mode (No valid API key)
+[2026-03-02 23:31:40.145535] Using Mock Weather Mode (No valid API key)
+[2026-03-02 23:31:55.101184] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772474514/virtual-mandi-products/ibogj9lytyit7umgfitb.png
+[2026-03-02 23:36:50.625562] Registering user with data: {'name': 'Harini', 'email': 'harini@gmail.com', 'password': '789456', 'location': 'namakkal', 'role': 'farmer'}
+[2026-03-02 23:36:51.061875] User harini@gmail.com registered successfully with ID 69a5d1ba897b98eb277f2034
+[2026-03-02 23:36:52.324593] Using Mock Weather Mode (No valid API key)
+[2026-03-02 23:36:53.107648] Using Mock Weather Mode (No valid API key)
+[2026-03-02 23:36:53.420739] Using Mock Weather Mode (No valid API key)
+[2026-03-02 23:37:20.433920] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772474839/virtual-mandi-products/wffqoxmd2g5my81diyk2.png
+[2026-03-02 23:37:41.555833] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772474859/virtual-mandi-products/zin756etucf0jnstkrgc.jpg
+[2026-03-02 23:39:57.710655] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772474996/virtual-mandi-products/it8iutwhld3injzkou4b.jpg
+[2026-03-02 23:56:47.819054] Using Mock Weather Mode (No valid API key)
+[2026-03-02 23:56:49.659871] Using Mock Weather Mode (No valid API key)
+[2026-03-02 23:57:00.110772] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772476019/virtual-mandi-products/csdic9dtfd1xdilotwgn.jpg
+[2026-03-07 10:38:19.388886] Registering user with data: {'name': 'chandru', 'email': 'chandru@gmail.com', 'password': '9025', 'role': 'buyer', 'type': 'retailer'}
+[2026-03-07 10:38:32.469411] User chandru@gmail.com registered successfully with ID 69abb2d0b5510c08a251eb11
+[2026-03-07 10:40:14.611051] Registering user with data: {'name': 'jeeva', 'email': 'jeeva@gmail.com', 'password': '7373', 'location': 'krishnagiri', 'role': 'farmer'}
+[2026-03-07 10:40:15.400564] User jeeva@gmail.com registered successfully with ID 69abb336b5510c08a251eb14
+[2026-03-07 10:40:16.681624] Using Mock Weather Mode (No valid API key)
+[2026-03-07 10:40:18.085872] Using Mock Weather Mode (No valid API key)
+[2026-03-07 10:40:32.598393] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772860231/virtual-mandi-products/uvgzmvblojbex6wrumbj.jpg
+[2026-03-07 10:44:29.334515] Using Mock Weather Mode (No valid API key)
+[2026-03-07 10:44:29.713420] Using Mock Weather Mode (No valid API key)
+[2026-03-07 10:45:13.008198] Using Mock Weather Mode (No valid API key)
+[2026-03-07 10:45:13.691503] Using Mock Weather Mode (No valid API key)
+[2026-03-07 10:52:38.302066] Using Mock Weather Mode (No valid API key)
+[2026-03-07 10:52:39.359747] Using Mock Weather Mode (No valid API key)
+[2026-03-07 10:54:33.523179] Using Mock Weather Mode (No valid API key)
+[2026-03-07 10:54:53.240716] Using Mock Weather Mode (No valid API key)
+[2026-03-07 11:09:54.149013] Using Mock Weather Mode (No valid API key)
+[2026-03-07 11:10:23.995756] Using Mock Weather Mode (No valid API key)
+[2026-03-07 11:10:27.781815] Using Mock Weather Mode (No valid API key)
+[2026-03-07 11:18:05.300107] Using Mock Weather Mode (No valid API key)
+[2026-03-07 11:18:06.229369] Using Mock Weather Mode (No valid API key)
+[2026-03-07 11:41:43.177065] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772863902/virtual-mandi-products/wiqvhxterucuot0poqvn.jpg
+[2026-03-07 11:51:42.278037] Using Mock Weather Mode (No valid API key)
+[2026-03-07 11:51:43.413948] Using Mock Weather Mode (No valid API key)
+[2026-03-07 11:52:03.712214] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772864522/virtual-mandi-products/wxrgtonymdltj6ekeyo8.jpg
+[2026-03-07 11:52:06.052860] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772864525/virtual-mandi-products/cmbdsba0pfmivdo9sffh.jpg
+[2026-03-07 11:52:08.830436] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772864527/virtual-mandi-products/r3fjn9k10gu9v61niynd.jpg
+[2026-03-07 11:52:16.919513] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772864535/virtual-mandi-products/o1gdh7azrxtxfi3xfqui.jpg
+[2026-03-07 11:52:25.418679] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772864544/virtual-mandi-products/g1g3hqhp0ddulnfrcwkx.jpg
+[2026-03-07 11:52:36.497956] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772864555/virtual-mandi-products/thkhhqva0xk7xxbsweba.jpg
+[2026-03-07 11:52:44.669017] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772864563/virtual-mandi-products/sveu30iyakg7nvk0zb8v.jpg
+[2026-03-07 11:52:47.227747] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772864566/virtual-mandi-products/zmpugkddamyqgq86kf5z.jpg
+[2026-03-07 11:52:49.482236] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772864568/virtual-mandi-products/jurvpdrn67bithp6sy5n.jpg
+[2026-03-07 11:59:44.060431] Using Mock Weather Mode (No valid API key)
+[2026-03-07 11:59:44.786246] Using Mock Weather Mode (No valid API key)
+[2026-03-07 11:59:54.206787] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772864993/virtual-mandi-products/zz9tbjhs2tiakfpsn2xb.jpg
+[2026-03-07 11:59:56.663766] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772864995/virtual-mandi-products/lp4kftdhzkzzh2ykafo6.jpg
+[2026-03-07 11:59:59.736876] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772864998/virtual-mandi-products/qqaujyautrabjdnb08we.jpg
+[2026-03-07 12:00:03.935088] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772865003/virtual-mandi-products/yiqinapjyuucb52bh59q.jpg
+[2026-03-07 12:00:22.157979] Using Mock Weather Mode (No valid API key)
+[2026-03-07 12:00:23.866706] Using Mock Weather Mode (No valid API key)
+[2026-03-07 12:00:39.872768] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772865038/virtual-mandi-products/cbz17xkfgzul50tjn1i8.jpg
+[2026-03-07 12:00:41.852349] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772865041/virtual-mandi-products/oom57qr4rry66qfaomm3.jpg
+[2026-03-07 12:00:45.477154] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772865044/virtual-mandi-products/dmqip1bkjqgcppyhg7c3.jpg
+[2026-03-07 12:00:51.955840] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772865049/virtual-mandi-products/a5dk2qhqptdnbcbicrps.jpg
+[2026-03-07 12:00:55.845265] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772865054/virtual-mandi-products/jyuabe3ao5isr61fujpc.jpg
+[2026-03-07 12:00:59.082130] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772865058/virtual-mandi-products/z0ifdbtxoxfxkxoeosyw.jpg
+[2026-03-07 12:01:06.088311] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772865065/virtual-mandi-products/lkvajvlxa2ygywjfeosu.jpg
+[2026-03-07 12:01:09.057457] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772865067/virtual-mandi-products/hi0u5cta9hjhlunu9kqx.jpg
+[2026-03-07 12:01:15.924014] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772865074/virtual-mandi-products/bc21pjkbnunnikmmmrey.jpg
+[2026-03-07 12:17:35.559749] Using Mock Weather Mode (No valid API key)
+[2026-03-07 12:17:36.711780] Using Mock Weather Mode (No valid API key)
+[2026-03-07 14:22:44.547937] Using Mock Weather Mode (No valid API key)
+[2026-03-07 14:22:46.583853] Using Mock Weather Mode (No valid API key)
+[2026-03-07 14:33:36.172340] Using Mock Weather Mode (No valid API key)
+[2026-03-07 14:33:37.334030] Using Mock Weather Mode (No valid API key)
+[2026-03-07 14:36:50.265572] Using Mock Weather Mode (No valid API key)
+[2026-03-07 14:36:57.943385] Using Mock Weather Mode (No valid API key)
+[2026-03-07 14:51:50.786351] Using Mock Weather Mode (No valid API key)
+[2026-03-07 14:51:57.783632] Using Mock Weather Mode (No valid API key)
+[2026-03-07 15:01:54.842936] Using Mock Weather Mode (No valid API key)
+[2026-03-07 15:01:56.165666] Using Mock Weather Mode (No valid API key)
+[2026-03-07 15:19:52.121475] Using Mock Weather Mode (No valid API key)
+[2026-03-07 15:19:52.435236] Using Mock Weather Mode (No valid API key)
+[2026-03-07 22:10:17.131333] Using Mock Weather Mode (No valid API key)
+[2026-03-07 22:10:35.603169] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772901635/virtual-mandi-products/bi4nxjv7rr2ksekhvqt4.jpg
+[2026-03-07 22:10:36.682240] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772901636/virtual-mandi-products/qgezirce2shyad6dl5am.jpg
+[2026-03-07 22:10:38.025509] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772901637/virtual-mandi-products/l4b5keawhl5tnfp6kfyn.jpg
+[2026-03-07 22:10:39.942550] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772901639/virtual-mandi-products/ktmeq2kd67kxd4ojz8cw.jpg
+[2026-03-07 22:10:41.202164] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772901640/virtual-mandi-products/fr1g1od6yv9frsn7kvna.jpg
+[2026-03-07 22:10:42.640003] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772901642/virtual-mandi-products/bwudz4iyujapsmdxpbwu.jpg
+[2026-03-07 22:10:44.413580] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772901643/virtual-mandi-products/uh4s9t5iji5cy4vle1cl.jpg
+[2026-03-07 22:10:46.480212] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772901645/virtual-mandi-products/hfyf2o4bfcur7qq113sd.jpg
+[2026-03-07 22:10:47.929683] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772901647/virtual-mandi-products/lipa6ufbknwchk3a6jex.jpg
+[2026-03-07 22:11:12.027948] Using Mock Weather Mode (No valid API key)
+[2026-03-07 22:11:21.683419] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772901681/virtual-mandi-products/tmoygugpjhxulvykm2sd.jpg
+[2026-03-07 22:24:10.408978] Using Mock Weather Mode (No valid API key)
+[2026-03-07 22:24:32.199025] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772902471/virtual-mandi-products/dsqbnpw01ik9l2hso963.jpg
+[2026-03-07 22:25:54.319187] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772902553/virtual-mandi-products/omuztr8ahnwoluzviq6l.jpg
+[2026-03-07 22:25:55.621210] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772902554/virtual-mandi-products/s3gbcyp9xcjshln31ckh.jpg
+[2026-03-07 22:25:57.198620] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772902556/virtual-mandi-products/omhga0hdnqvyxre5hhfj.jpg
+[2026-03-07 22:25:58.470196] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772902557/virtual-mandi-products/lqqp6awa6rmlzpqa5crr.jpg
+[2026-03-07 22:26:00.122001] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772902559/virtual-mandi-products/mlrfd4f7vsuw1teqeibi.jpg
+[2026-03-07 22:26:01.573171] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772902560/virtual-mandi-products/zof29hgcxeloqxcnuolm.jpg
+[2026-03-07 22:26:03.093828] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772902562/virtual-mandi-products/kiyjngwvufdbwoxj2cqj.jpg
+[2026-03-07 22:26:25.357724] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772902584/virtual-mandi-products/yynlzzqtkfsbdqrxveig.jpg
+[2026-03-07 22:26:26.481520] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772902585/virtual-mandi-products/zbtyyqmpb3hndd80owz4.jpg
+[2026-03-07 22:26:27.917523] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772902587/virtual-mandi-products/fh1kgl6szaihu7u6osfz.jpg
+[2026-03-07 22:26:28.877391] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772902588/virtual-mandi-products/tcc895svdbiaevlf8lly.jpg
+[2026-03-07 22:26:30.742603] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772902589/virtual-mandi-products/zic4rintb5tql2uvrpe7.jpg
+[2026-03-07 22:26:31.941963] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772902591/virtual-mandi-products/ewyo4fsmd117utlpclrf.jpg
+[2026-03-07 22:26:35.437979] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772902593/virtual-mandi-products/gklhzsasjew9jxjwzslr.jpg
+[2026-03-07 22:32:01.669795] Using Mock Weather Mode (No valid API key)
+[2026-03-07 22:32:25.358183] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772902944/virtual-mandi-products/lna2bpu6jtrlehau9p7q.jpg
+[2026-03-07 22:32:41.826087] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772902960/virtual-mandi-products/vs1xv3nqrd04cuzfdeue.jpg
+[2026-03-07 22:32:44.461287] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772902963/virtual-mandi-products/udrhwrrn8va8nlzvdh9k.jpg
+[2026-03-07 22:32:46.475684] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772902965/virtual-mandi-products/twn0cty7x6ojt3blxtxy.jpg
+[2026-03-07 22:32:49.228072] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772902968/virtual-mandi-products/bfcpodbibiomgk9lpbvr.jpg
+[2026-03-07 22:32:50.995517] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772902970/virtual-mandi-products/s5fjuloxebsys0jvobpm.jpg
+[2026-03-07 22:32:59.277387] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772902972/virtual-mandi-products/hppm8r11z6gawfuqgicl.jpg
+[2026-03-07 22:41:25.532150] Using Mock Weather Mode (No valid API key)
+[2026-03-07 22:42:18.426294] Using Mock Weather Mode (No valid API key)
+[2026-03-07 22:47:54.192185] Using Mock Weather Mode (No valid API key)
+[2026-03-07 23:04:27.883263] Using Mock Weather Mode (No valid API key)
+[2026-03-07 23:17:03.747324] Registering user with data: {'name': 'Test Farmer', 'email': 'test@v-mandi.in', 'password': 'password', 'location': 'Haryana', 'role': 'farmer'}
+[2026-03-07 23:17:04.192457] User test@v-mandi.in registered successfully with ID 69ac6498917cfc00bfe0fc1d
+[2026-03-07 23:17:05.566918] Using Mock Weather Mode (No valid API key)
+[2026-03-07 23:20:25.732200] Registering user with data: {'name': 'Test User', 'email': 'test@example.com', 'password': 'password123', 'role': 'buyer', 'type': 'retailer'}
+[2026-03-07 23:20:26.136185] User test@example.com registered successfully with ID 69ac6561917cfc00bfe0fc20
+[2026-03-07 23:28:29.929778] Using Mock Weather Mode (No valid API key)
+[2026-03-08 04:01:47.915146] Registering user with data: {'name': 'Test Buyer', 'email': 'buyer@test.com', 'password': 'password123', 'role': 'buyer', 'type': 'retailer'}
+[2026-03-08 04:02:01.891667] User buyer@test.com registered successfully with ID 69aca761917cfc00bfe0fc25
+[2026-03-08 11:15:35.359010] Registering user with data: {'name': 'Test User', 'email': 'test@test.com', 'password': 'Password123!', 'location': 'Delhi', 'role': 'farmer'}
+[2026-03-08 11:15:39.162094] User test@test.com registered successfully with ID 69ad0d02003b1f43bd280157
+[2026-03-08 11:15:43.351098] Using Mock Weather Mode (No valid API key)
+[2026-03-08 16:14:21.086205] Using Mock Weather Mode (No valid API key)
+[2026-03-08 16:14:43.245386] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772966683/virtual-mandi-products/bhy4gq1a6bextfrct90m.jpg
+[2026-03-08 16:15:00.388007] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772966700/virtual-mandi-products/mttayskmimxf7e4ddb2b.jpg
+[2026-03-08 16:15:02.935342] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772966703/virtual-mandi-products/ig7t7mghbadfesmhcrmq.jpg
+[2026-03-08 16:15:06.745347] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772966706/virtual-mandi-products/q1ao2zxhbkih6jqwhbds.jpg
+[2026-03-08 16:15:11.026570] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772966709/virtual-mandi-products/e6nxnq8btsmm06aoatef.jpg
+[2026-03-08 16:15:14.809272] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772966714/virtual-mandi-products/sfnsh2myearczxma3wyd.jpg
+[2026-03-08 16:15:18.938075] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772966718/virtual-mandi-products/df10cmqeysbm887iomly.jpg
+[2026-03-08 16:15:22.293853] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772966721/virtual-mandi-products/yugpfrbt7xpi2vbhgfmf.jpg
+[2026-03-08 20:43:53.200772] Using Mock Weather Mode (No valid API key)
+[2026-03-08 20:44:37.804570] Using Mock Weather Mode (No valid API key)
+[2026-03-08 22:14:03.079468] Using Mock Weather Mode (No valid API key)
+[2026-03-08 22:14:03.138393] Using Mock Weather Mode (No valid API key)
+[2026-03-09 00:03:16.148136] Using Mock Weather Mode (No valid API key)
+[2026-03-09 00:03:30.146281] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1772994810/virtual-mandi-products/nwmouvwnxttvualxktt1.jpg
+[2026-03-09 01:40:29.624163] Using Mock Weather Mode (No valid API key)
+[2026-03-09 01:40:37.746426] Using Mock Weather Mode (No valid API key)
+[2026-03-09 02:03:00.144558] Registering user with data: {'name': 'Muralidharan', 'email': 'muralidharanengin@gmail.com', 'password': '123456', 'location': 'Namakkal, Tamil Nadu', 'role': 'farmer', 'whatsapp_number': '09025999927', 'district': 'Namakkal', 'state': 'Tamil Nadu', 'lat': 37.5682, 'lon': 126.9977}
+[2026-03-09 02:03:00.598797] User muralidharanengin@gmail.com registered successfully with ID 69addcfc51e592eba7593e89
+[2026-03-09 02:03:03.157774] Using Mock Weather Mode (No valid API key)
+[2026-03-09 02:03:05.582986] Using Mock Weather Mode (No valid API key)
+[2026-03-09 02:03:05.848702] Using Mock Weather Mode (No valid API key)
+[2026-03-09 02:03:24.697005] Using Mock Weather Mode (No valid API key)
+[2026-03-09 02:03:27.648819] Using Mock Weather Mode (No valid API key)
+[2026-03-09 02:03:27.900948] Using Mock Weather Mode (No valid API key)
+[2026-03-09 02:03:56.869380] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1773002036/virtual-mandi-products/p0zoajryamniqwwmltut.jpg
+[2026-03-09 02:04:09.830664] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1773002048/virtual-mandi-products/srw3ubv6kcabrgxucihn.jpg
+[2026-03-09 02:04:11.107779] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1773002050/virtual-mandi-products/oaui0pxwixupcspep11l.jpg
+[2026-03-09 02:04:12.353892] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1773002051/virtual-mandi-products/ie6veegkawgobte6eqpw.jpg
+[2026-03-09 02:04:13.541771] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1773002052/virtual-mandi-products/rkagmmdvrbuvraeqiiel.jpg
+[2026-03-09 02:04:15.608002] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1773002055/virtual-mandi-products/i1nkqryxoo8oonqxymab.jpg
+[2026-03-09 02:04:16.645467] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1773002055/virtual-mandi-products/sbjwwpdytp8otxgq2cr8.jpg
+[2026-03-09 02:05:47.264005] Registering user with data: {'name': 'mural', 'email': 'mural@gmail.com', 'password': '9025', 'role': 'buyer', 'type': 'retailer'}
+[2026-03-09 02:05:47.689023] User mural@gmail.com registered successfully with ID 69addda351e592eba7593e8d
+[2026-03-09 02:44:20.273984] Registering user with data: {'name': {'name': 'Test User', 'email': '', 'mobile': '9876543210', 'whatsapp': '9876543210', 'state': 'Maharashtra', 'district': 'Pune', 'password': '', 'confirmPassword': '', 'category': 'vegetables', 'language': 'english', 'whatsappSameAsMobile': True, 'location': None}, 'role': 'farmer'}
+[2026-03-09 02:44:20.276508] Validation failed. Missing: ['email', 'password']
+[2026-03-09 02:46:41.340317] Registering user with data: {'name': {'name': 'Test User', 'email': '', 'mobile': '9876543210', 'whatsapp': '9876543210', 'state': 'Maharashtra', 'district': 'Pune', 'password': '', 'confirmPassword': '', 'category': 'vegetables', 'language': 'english', 'whatsappSameAsMobile': True, 'location': None}, 'role': 'farmer'}
+[2026-03-09 02:46:41.340830] Validation failed. Missing: ['email', 'password']
+[2026-03-09 02:47:38.943407] Registering user with data: {'name': {'name': 'Test User', 'email': '', 'mobile': '9876543210', 'whatsapp': '9876543210', 'state': 'Maharashtra', 'district': 'Pune', 'password': 'Password123!', 'confirmPassword': 'Password123!', 'category': 'vegetables', 'language': 'english', 'whatsappSameAsMobile': True, 'location': None}, 'role': 'farmer'}
+[2026-03-09 02:47:38.943407] Validation failed. Missing: ['email', 'password']
+[2026-03-09 02:51:43.769099] Using Mock Weather Mode (No valid API key)
+[2026-03-09 02:51:44.103467] Using Mock Weather Mode (No valid API key)
+[2026-03-09 02:51:50.008885] Using Mock Weather Mode (No valid API key)
+[2026-03-09 02:51:50.088215] Using Mock Weather Mode (No valid API key)
+[2026-03-09 22:56:58.297244] Registering user with data: {'name': 'test1', 'email': 'ydyrdkvjvv@gmail.com', 'password': '123456', 'location': '37.5682,126.9977', 'role': 'farmer', 'district': 'Namakkal', 'state': 'Tamil Nadu'}
+[2026-03-09 22:57:00.071664] User ydyrdkvjvv@gmail.com registered successfully with ID 69af02e2b24993b0dda4f21f
+[2026-03-09 22:57:29.161952] Registering user with data: {'name': 'test1', 'email': 'ydyrdkvjvv@gmail.com', 'password': '123456', 'location': '37.5682,126.9977', 'role': 'farmer', 'district': 'Namakkal', 'state': 'Tamil Nadu'}
+[2026-03-09 22:57:29.214787] User already exists: ydyrdkvjvv@gmail.com
+[2026-03-09 22:57:41.391754] Registering user with data: {'name': 'test1', 'email': 'ydydkvjvv@gmail.com', 'password': '123456', 'location': '37.5682,126.9977', 'role': 'farmer', 'district': 'Namakkal', 'state': 'Tamil Nadu'}
+[2026-03-09 22:57:42.246617] User ydydkvjvv@gmail.com registered successfully with ID 69af030eb24993b0dda4f222
+[2026-03-09 23:05:54.569734] Registering user with data: {'name': 'tesr', 'email': 'tes@gmail.com', 'password': '78945612352', 'location': '37.5682,126.9977', 'role': 'farmer', 'district': 'Namakkal', 'state': 'Tamil Nadu'}
+[2026-03-09 23:05:55.443459] User tes@gmail.com registered successfully with ID 69af04fb2a18e7b1d3bcc358
+[2026-03-09 23:05:55.837958] OTP for 78945612352 (whatsapp): 497314
+[2026-03-09 23:08:48.977988] Registering user with data: {'name': 'yesy2', 'email': 'dkvjvv@gmail.com', 'password': '78945612332', 'location': '37.5682,126.9977', 'role': 'farmer', 'district': 'Namakkal', 'state': 'Tamil Nadu'}
+[2026-03-09 23:08:49.848553] User dkvjvv@gmail.com registered successfully with ID 69af05a9e315b81415db1ecb
+[2026-03-09 23:08:50.264217] OTP for 78945612332 (whatsapp): 000000
+[2026-03-09 23:11:40.418092] Registering user with data: {'name': 'mure', 'email': '1234567899@gmail.com', 'password': '1234567899', 'location': '37.5682,126.9977', 'role': 'farmer', 'district': 'Barpeta', 'state': 'Assam'}
+[2026-03-09 23:11:41.303764] User 1234567899@gmail.com registered successfully with ID 69af0655c226f2fa061895d2
+[2026-03-09 23:11:41.698586] OTP for 1234567899 (whatsapp): 000000
+[2026-03-09 23:18:15.050765] Registering user with data: {'name': 'iro', 'email': '45612379@gmail.com', 'password': '45612379', 'location': '37.5682,126.9977', 'role': 'farmer', 'phone': '45612379', 'whatsapp_number': '45612379', 'district': 'Changlang', 'state': 'Arunachal Pradesh'}
+[2026-03-09 23:18:15.960320] User 45612379@gmail.com registered successfully with ID 69af07df704a6eef27a134d7
+[2026-03-09 23:18:16.338777] OTP for 45612379 (whatsapp): 000000
+[2026-03-09 23:18:22.222664] Using Mock Weather Mode (No valid API key)
+[2026-03-09 23:18:22.297292] Using Mock Weather Mode (No valid API key)
+[2026-03-09 23:18:24.147265] Using Mock Weather Mode (No valid API key)
+[2026-03-09 23:18:47.295118] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1773078526/virtual-mandi-products/cppudckmewug3zg00enq.jpg
+[2026-03-10 09:48:15.602664] OTP for 9025999927 (sms): 000000
+[2026-03-10 09:49:17.861716] Registering user with data: {'name': 'john', 'email': 'john@gmail.com', 'password': '147', 'location': '11.3981823,78.1616261', 'role': 'farmer', 'phone': '9025999927', 'whatsapp_number': '9025999927', 'district': 'Chennai', 'state': 'Tamil Nadu'}
+[2026-03-10 09:49:18.988550] User john@gmail.com registered successfully with ID 69af9bc68457f520186176b5
+[2026-03-10 09:49:19.443000] OTP for 9025999927 (whatsapp): 000000
+[2026-03-10 09:49:25.366417] Using Mock Weather Mode (No valid API key)
+[2026-03-10 09:49:25.508669] Using Mock Weather Mode (No valid API key)
+[2026-03-10 09:49:27.153919] Using Mock Weather Mode (No valid API key)
+[2026-03-10 09:49:51.450764] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1773116390/virtual-mandi-products/e15varmoypx82djymb2n.jpg
+[2026-03-10 09:52:07.451041] Using Mock Weather Mode (No valid API key)
+[2026-03-10 09:52:07.770238] Using Mock Weather Mode (No valid API key)
+[2026-03-10 09:52:10.928240] Using Mock Weather Mode (No valid API key)
+[2026-03-10 10:04:47.649539] Using Mock Weather Mode (No valid API key)
+[2026-03-10 10:04:47.770235] Using Mock Weather Mode (No valid API key)
+[2026-03-10 10:04:49.608908] Using Mock Weather Mode (No valid API key)
+[2026-03-10 10:05:22.563799] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1773117321/virtual-mandi-products/glsbfinxlfqdkbnmqn8f.jpg
+[2026-03-10 10:05:57.298923] Image uploaded: https://res.cloudinary.com/dz3numoxl/image/upload/v1773117356/virtual-mandi-products/qju0q9kmfymo3lrqotvp.jpg
+[2026-03-10 10:07:32.448646] Registering user with data: {'name': 'chandru', 'email': 'chandru@gmail.com', 'password': '9025', 'role': 'buyer', 'type': 'retailer'}
+[2026-03-10 10:07:33.073112] User chandru@gmail.com registered successfully with ID 69afa00cb5a9d6ccdc4dd757
+[2026-03-10 10:08:09.338754] Using Mock Weather Mode (No valid API key)
+[2026-03-10 10:08:09.646190] Using Mock Weather Mode (No valid API key)
+[2026-03-10 10:08:12.665460] Using Mock Weather Mode (No valid API key)
+[2026-03-11 11:31:53.632669] Market API Error: HTTPSConnectionPool(host='api.data.gov.in', port=443): Read timed out. (read timeout=12)
+[2026-03-11 11:37:21.796286] Market API Error: HTTPSConnectionPool(host='api.data.gov.in', port=443): Read timed out. (read timeout=12)
+[2026-03-11 11:37:39.763376] Market API Error: HTTPSConnectionPool(host='api.data.gov.in', port=443): Read timed out. (read timeout=12)
+[2026-03-11 11:44:43.088017] Market API Error: HTTPSConnectionPool(host='api.data.gov.in', port=443): Read timed out. (read timeout=12)
+[2026-03-11 11:57:19.859103] Market API Error: HTTPSConnectionPool(host='api.data.gov.in', port=443): Read timed out. (read timeout=12)
+[2026-03-11 11:58:09.497179] Market API Error: HTTPSConnectionPool(host='api.data.gov.in', port=443): Read timed out. (read timeout=12)
+[2026-03-11 23:13:32.341330] Market API Error: HTTPSConnectionPool(host='api.data.gov.in', port=443): Read timed out. (read timeout=20)
+[2026-03-11 23:35:52.284565] Market API Error: HTTPSConnectionPool(host='api.data.gov.in', port=443): Read timed out. (read timeout=20)
+[2026-03-14 22:10:08.663501] Market API Error: HTTPSConnectionPool(host='api.data.gov.in', port=443): Read timed out. (read timeout=20)
+[2026-03-14 23:07:29.021797] Weather API Error: HTTPSConnectionPool(host='api.openweathermap.org', port=443): Read timed out. (read timeout=8)
+[2026-03-15 19:57:02.968527] Market API Error: HTTPSConnectionPool(host='api.data.gov.in', port=443): Read timed out. (read timeout=20)

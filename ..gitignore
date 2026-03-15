@@ -1,0 +1,95 @@
+# =========================
+# Python / Flask
+# =========================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.env
+.env.*
+venv/
+env/
+ENV/
+.virtualenv/
+instance/
+*.sqlite3
+*.db
+
+# =========================
+# Flask specific
+# =========================
+flask_session/
+.mypy_cache/
+.pytest_cache/
+
+# =========================
+# APScheduler
+# =========================
+apscheduler.sqlite
+
+# =========================
+# Node / React
+# =========================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+yarn.lock
+
+# =========================
+# React Build Files
+# =========================
+build/
+dist/
+.next/
+.out/
+
+# =========================
+# Logs
+# =========================
+*.log
+logs/
+
+# =========================
+# VS Code / IDE
+# =========================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# =========================
+# OS Files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# MongoDB
+# =========================
+*.wt
+*.lock
+*.ns
+*.0
+*.1
+
+# =========================
+# Coverage / Testing
+# =========================
+coverage/
+htmlcov/
+.coverage
+
+# =========================
+# Secrets & Keys
+# =========================
+*.pem
+*.key
+*.crt
