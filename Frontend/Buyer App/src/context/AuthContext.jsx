@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { api } from "@/services/api";
+import { api, BASE_URL } from "@/services/api";
 
 const AuthContext = createContext(undefined);
 
@@ -19,7 +19,7 @@ export const AuthProvider = ({ children }) => {
             const token = localStorage.getItem("buyerToken");
             if (token && !user) {
                 try {
-                    const res = await fetch("http://localhost:5000/profile", {
+                    const res = await fetch(`${BASE_URL}/profile`, {
                         headers: { "Authorization": `Bearer ${token}` }
                     });
                     if (res.status === 401) {

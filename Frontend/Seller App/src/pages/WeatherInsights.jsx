@@ -6,12 +6,7 @@ import {
   Wind, Droplets, Sun, TrendingUp, CheckCircle, AlertTriangle,
   Search,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import PageTransition from "@/components/PageTransition";
-import WeatherInsightCard from "@/components/WeatherInsightCard";
-
-const BASE_URL = "http://localhost:5000";
+import { sellerApi, BASE_URL } from "@/lib/api";
 
 /* ── Season helper ─────────────────────────────────────── */
 const getSeasonKey = () => {

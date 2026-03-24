@@ -12,7 +12,7 @@ import {
     ResponsiveContainer
 } from "recharts";
 
-const BASE_URL = "http://localhost:5000";
+import { BASE_URL } from "@/lib/api";
 
 const AdminDash = () => {
     const [stats, setStats] = useState(null);

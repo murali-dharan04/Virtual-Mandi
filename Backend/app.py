@@ -1072,8 +1072,10 @@ def get_weather_current():
         else:
             current_url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}&units=metric"
         
+        print(f"DEBUG: Weather fetching from: {current_url}")
         resp = requests.get(current_url, timeout=8)
         if resp.status_code != 200:
+            print(f"DEBUG: Weather API Error {resp.status_code}: {resp.text}")
             return jsonify({"error": "Failed to fetch weather data from external provider."}), 502
             
         data = resp.json()

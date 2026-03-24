@@ -1,4 +1,4 @@
-const BASE_URL = "https://virtual-mandi.onrender.com";
+export const BASE_URL = "https://virtual-mandi.onrender.com";
 
 const getToken = () => localStorage.getItem("buyerToken");
 
