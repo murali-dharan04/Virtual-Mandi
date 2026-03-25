@@ -87,9 +87,7 @@ const App = () => {
         }
     }, []);
 
-    const [showOnboarding, setShowOnboarding] = useState(() => {
-        return !localStorage.getItem("onboarding_complete");
-    });
+    const [showOnboarding, setShowOnboarding] = useState(false);
 
     return (
         <ErrorBoundary>
