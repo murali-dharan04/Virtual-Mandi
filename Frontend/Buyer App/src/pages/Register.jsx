@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Leaf } from "lucide-react";
@@ -7,33 +7,43 @@ import { motion } from "framer-motion";
 import PageTransition from "@/components/PageTransition";
 
 const Register = () => {
-    const [name, setName] = useState("");
-    const [email, setEmail] = useState("");
+    const [name, setName] = useState(() => sessionStorage.getItem("reg_name") || "");
+    const [email, setEmail] = useState(() => sessionStorage.getItem("reg_email") || "");
     const [password, setPassword] = useState("");
-    const [type, setType] = useState("retailer");
+    const [type, setType] = useState(() => sessionStorage.getItem("reg_type") || "retailer");
     const [error, setError] = useState("");
-    const [loading, setLoading] = useState(false);
+    const [optimisticSuccess, setOptimisticSuccess] = useState(false);
     const { register, login } = useAuth();
     const navigate = useNavigate();
 
-    const handleSubmit = async (e) => {
+    useEffect(() => {
+        sessionStorage.setItem("reg_name", name);
+        sessionStorage.setItem("reg_email", email);
+        sessionStorage.setItem("reg_type", type);
+    }, [name, email, type]);
+
+    const handleSubmit = (e) => {
         e.preventDefault();
         if (!name || !email || !password) { setError("All fields are required"); return; }
-        setLoading(true);
+        setOptimisticSuccess(true);
         setError("");
-        try {
-            await register(name, email, password, type);
-            // Auto-login after successful registration
-            if (login) {
-                await login(email, password);
+
+        setTimeout(async () => {
+            try {
+                await register(name, email, password, type);
+                if (login) {
+                    await login(email, password);
+                }
+                sessionStorage.removeItem("reg_name");
+                sessionStorage.removeItem("reg_email");
+                sessionStorage.removeItem("reg_type");
+                navigate("/");
+            } catch (err) {
+                setOptimisticSuccess(false);
+                const errorMsg = err.response?.data?.error || err.message || "Registration failed";
+                setError(errorMsg);
             }
-            navigate("/");
-        } catch (err) {
-            const errorMsg = err.response?.data?.error || err.message || "Registration failed";
-            setError(errorMsg);
-        } finally {
-            setLoading(false);
-        }
+        }, 0);
     };
 
     const buyerTypes = [
@@ -89,9 +99,9 @@ const Register = () => {
                                     ))}
                                 </div>
                             </div>
-                            <button type="submit" disabled={loading}
-                                className="w-full rounded-xl gradient-hero py-3.5 text-base font-bold text-primary-foreground shadow-card transition-all hover:opacity-90 disabled:opacity-50">
-                                {loading ? "Creating..." : "Create Account"}
+                            <button type="submit" disabled={optimisticSuccess}
+                                className={`w-full rounded-xl py-3.5 text-base font-bold text-primary-foreground shadow-card transition-all disabled:opacity-90 disabled:cursor-wait ${optimisticSuccess ? "bg-emerald-600" : "gradient-hero hover:opacity-90"}`}>
+                                {optimisticSuccess ? "Account Created! Redirecting..." : "Create Account"}
                             </button>
                         </form>
 
