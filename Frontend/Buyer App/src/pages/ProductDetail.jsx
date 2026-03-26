@@ -2,13 +2,14 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { api } from "@/services/api";
 import { onListingEvents } from "@/services/socketService";
-import { MapPin, Clock, Calendar, Shield, Minus, Plus, Leaf, Star, CheckCircle2, TrendingUp, ArrowLeft, ChevronLeft, ChevronRight, Store, Truck, Loader2, ShoppingCart, Phone, MessageSquare, Bell, User, Gavel, Sparkles } from "lucide-react";
+import { MapPin, Clock, Calendar, Shield, Minus, Plus, Leaf, Star, CheckCircle2, TrendingUp, ArrowLeft, ChevronLeft, ChevronRight, Store, Truck, Loader2, ShoppingCart, Phone, MessageSquare, Bell, User, Gavel, Sparkles, Zap } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import PageTransition from "@/components/PageTransition";
 import confetti from "canvas-confetti";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 // Normalize phone to international format
 const toWaNumber = (phone) => {
@@ -31,7 +32,25 @@ const ProductDetail = () => {
     const navigate = useNavigate();
     const { state } = useLocation();
     const { toast } = useToast();
-    const [listing, setListing] = useState(state?.listing);
+    const queryClient = useQueryClient();
+
+    const { 
+        data: listing, 
+        isLoading, 
+        isError, 
+        error 
+    } = useQuery({
+        queryKey: ["product", id],
+        queryFn: async () => {
+            const data = await api.getListingById(id);
+            if (data.error) throw new Error(data.error);
+            return data;
+        },
+        initialData: state?.listing,
+        enabled: !!id,
+        refetchInterval: 10000, // Background polling every 10s as a fallback
+    });
+
     const [quantity, setQuantity] = useState(10);
     const [ordering, setOrdering] = useState(false);
     const [confirmed, setConfirmed] = useState(false);
@@ -44,6 +63,42 @@ const ProductDetail = () => {
     const [counterOffer, setCounterOffer] = useState(listing?.pricePerUnit ? Math.round(listing.pricePerUnit * 0.9) : 0);
     const [showSuccessAnim, setShowSuccessAnim] = useState(false);
     const [isUpdated, setIsUpdated] = useState(false);
+
+    // Sync counterOffer with listing price increments
+    useEffect(() => {
+        if (listing?.pricePerUnit) {
+            setCounterOffer(Math.round(listing.pricePerUnit * 0.9));
+        }
+    }, [listing?.pricePerUnit]);
+
+    // Socket Event listener for real-time invalidation
+    useEffect(() => {
+        if (!id) return;
+
+        const unsubscribe = onListingEvents({
+            onUpdate: (updatedData) => {
+                // If the updated listing ID matches our current page ID
+                if (updatedData.id === id || updatedData._id === id) {
+                    console.log("🚀 Real-time Update Received via Socket:", updatedData);
+                    queryClient.invalidateQueries(["product", id]);
+                    setIsUpdated(true);
+                    setTimeout(() => setIsUpdated(false), 3000);
+                }
+            },
+            onDelete: (deletedData) => {
+                if (deletedData.id === id || deletedData._id === id) {
+                    toast({ 
+                        title: "Listing Removed", 
+                        description: "The seller has removed this listing.", 
+                        variant: "destructive" 
+                    });
+                    navigate("/");
+                }
+            }
+        });
+
+        return () => unsubscribe();
+    }, [id, queryClient, navigate, toast]);
 
     const allListings = state?.allListings || [];
     const currentIndex = state?.currentIndex ?? -1;
@@ -71,16 +126,7 @@ const ProductDetail = () => {
         return () => clearInterval(interval);
     }, [autoSlide, images.length]);
 
-    useEffect(() => {
-        if (id) {
-            api.getListingById(id).then(data => {
-                if (!data.error) {
-                    setListing(prev => ({ ...prev, ...data }));
-                }
-            });
-        }
-    }, [id]);
-
+    // Seller Rating fetch
     useEffect(() => {
         const sid = listing?.seller_id || listing?.id;
         if (sid) {
@@ -89,28 +135,6 @@ const ProductDetail = () => {
             });
         }
     }, [listing?.seller_id, listing?.id]);
-
-    useEffect(() => {
-        if (!listing?.id && !listing?._id) return;
-
-        const unsubscribe = onListingEvents({
-            onUpdate: (updatedListing) => {
-                if (updatedListing.id === listing?.id || updatedListing.id === listing?._id) {
-                    setListing(prev => ({ ...prev, ...updatedListing }));
-                    setIsUpdated(true);
-                    setTimeout(() => setIsUpdated(false), 3000);
-                }
-            },
-            onDelete: (deletedData) => {
-                if (deletedData.id === listing?.id || deletedData.id === listing?._id) {
-                    toast({ title: "Listing Removed", description: "The seller has removed this listing.", variant: "destructive" });
-                    navigate("/");
-                }
-            }
-        });
-
-        return () => unsubscribe();
-    }, [listing?.id, listing?._id, navigate, toast]);
 
     useEffect(() => {
         if (listing?.cropName) {

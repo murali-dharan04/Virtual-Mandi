@@ -20,7 +20,7 @@ export const AuthProvider = ({ children }) => {
             const token = localStorage.getItem("buyerToken");
             if (token && !user) {
                 try {
-                    const res = await fetch(`${BASE_URL}/profile`, {
+                    const res = await fetch(`${BASE_URL}/api/auth/profile`, {
                         headers: { "Authorization": `Bearer ${token}` }
                     });
                     if (res.status === 401) {
@@ -30,11 +30,11 @@ export const AuthProvider = ({ children }) => {
                         return;
                     }
                     const data = await res.json();
-                    if (data.id) {
-                        const userData = { ...data, token };
+                    if (data.id || data._id) {
+                        const userData = { ...data, id: data.id || data._id, token };
                         setUser(userData);
                         localStorage.setItem("buyerUser", JSON.stringify(userData));
-                        joinRoom(data.id);
+                        joinRoom(data.id || data._id);
                     }
                 } catch (err) {
                     console.error("Failed to restore buyer session:", err);

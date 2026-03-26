@@ -9,7 +9,9 @@ let socket = null;
 
 export function getSocket() {
     if (!socket) {
+        const token = localStorage.getItem("buyerToken");
         socket = io(BASE_URL, {
+            auth: { token },
             transports: ["websocket", "polling"],
             reconnection: true,
             reconnectionAttempts: Infinity,
