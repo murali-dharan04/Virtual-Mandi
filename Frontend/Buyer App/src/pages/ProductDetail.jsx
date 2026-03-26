@@ -1,6 +1,7 @@
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { api } from "@/services/api";
+import { onListingEvents } from "@/services/socketService";
 import { MapPin, Clock, Calendar, Shield, Minus, Plus, Leaf, Star, CheckCircle2, TrendingUp, ArrowLeft, ChevronLeft, ChevronRight, Store, Truck, Loader2, ShoppingCart, Phone, MessageSquare, Bell, User, Gavel, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
@@ -42,6 +43,7 @@ const ProductDetail = () => {
     const [negotiationOpen, setNegotiationOpen] = useState(false);
     const [counterOffer, setCounterOffer] = useState(listing?.pricePerUnit ? Math.round(listing.pricePerUnit * 0.9) : 0);
     const [showSuccessAnim, setShowSuccessAnim] = useState(false);
+    const [isUpdated, setIsUpdated] = useState(false);
 
     const allListings = state?.allListings || [];
     const currentIndex = state?.currentIndex ?? -1;
@@ -87,6 +89,28 @@ const ProductDetail = () => {
             });
         }
     }, [listing?.seller_id, listing?.id]);
+
+    useEffect(() => {
+        if (!listing?.id && !listing?._id) return;
+
+        const unsubscribe = onListingEvents({
+            onUpdate: (updatedListing) => {
+                if (updatedListing.id === listing?.id || updatedListing.id === listing?._id) {
+                    setListing(prev => ({ ...prev, ...updatedListing }));
+                    setIsUpdated(true);
+                    setTimeout(() => setIsUpdated(false), 3000);
+                }
+            },
+            onDelete: (deletedData) => {
+                if (deletedData.id === listing?.id || deletedData.id === listing?._id) {
+                    toast({ title: "Listing Removed", description: "The seller has removed this listing.", variant: "destructive" });
+                    navigate("/");
+                }
+            }
+        });
+
+        return () => unsubscribe();
+    }, [listing?.id, listing?._id, navigate, toast]);
 
     useEffect(() => {
         if (listing?.cropName) {
@@ -328,7 +352,22 @@ const ProductDetail = () => {
                                         </span>
                                     )}
                                 </div>
-                                <h1 className="text-2xl md:text-3xl font-black text-slate-800 mb-0.5 tracking-tight italic">{listing.cropName}</h1>
+                                <div className="flex items-center justify-between">
+                                    <h1 className="text-2xl md:text-3xl font-black text-slate-800 mb-0.5 tracking-tight italic">{listing.cropName}</h1>
+                                    <AnimatePresence>
+                                        {isUpdated && (
+                                            <motion.div
+                                                initial={{ opacity: 0, x: 20 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                exit={{ opacity: 0, x: 20 }}
+                                                className="bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-lg flex items-center gap-1.5"
+                                            >
+                                                <Zap className="h-3 w-3 fill-current" />
+                                                Live Update
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
                                 <p className="text-xs text-slate-500 font-bold flex items-center gap-1.5">
                                     by <span className="text-emerald-600 uppercase tracking-widest">{listing.farmerName}</span>
                                     {listing.isVerified !== false && (

@@ -508,6 +508,8 @@ def add_listing():
             "unit": unit,
             "imageUrl": image_url,
             "farmerName": user.get("name", "Local Farmer"),
+            "farmerPhone": user.get("phone", ""),
+            "whatsappNumber": user.get("whatsapp_number", ""),
         })
 
         return jsonify({"message": "Listing added successfully!", "listing_id": str(listing_id)}), 201
@@ -666,7 +668,9 @@ def update_listing(id):
         "qualityGrade": update_data.get("quality_grade"),
         "unit": update_data.get("unit", "kg"),
         "imageUrl": update_data.get("image_url"),
-        "views": existing.get("views", 0)
+        "views": existing.get("views", 0),
+        "farmerPhone": mongo.db.Users.find_one({"_id": ObjectId(user_id)}).get("phone", ""),
+        "whatsappNumber": mongo.db.Users.find_one({"_id": ObjectId(user_id)}).get("whatsapp_number", ""),
     })
 
     return jsonify({"message": "Listing updated successfully"}), 200

@@ -1,6 +1,7 @@
-import { MapPin, Clock, Leaf, Phone, MessageSquare, Eye, CheckCircle2 } from "lucide-react";
+import { MapPin, Clock, Leaf, Phone, MessageSquare, Eye, CheckCircle2, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 // Helper to normalize phone to international format
 const toWaNumber = (phone) => {
@@ -22,6 +23,24 @@ const ListingCard = ({ listing, index, allListings }) => {
 
     // Real view count from backend
     const views = listing.views || 0;
+    const [isUpdated, setIsUpdated] = useState(false);
+    const prevListingRef = useRef(listing);
+
+    useEffect(() => {
+        // Only trigger if it's not the first render and important fields changed
+        const prev = prevListingRef.current;
+        const hasSignificantChange = 
+            prev.pricePerUnit !== listing.pricePerUnit || 
+            prev.quantity !== listing.quantity ||
+            prev.cropName !== listing.cropName;
+
+        if (hasSignificantChange) {
+            setIsUpdated(true);
+            const timer = setTimeout(() => setIsUpdated(false), 3000);
+            return () => clearTimeout(timer);
+        }
+        prevListingRef.current = listing;
+    }, [listing]);
 
     return (
         <motion.div
@@ -64,6 +83,23 @@ const ListingCard = ({ listing, index, allListings }) => {
                             <span className="text-base font-black text-slate-800 tracking-tight">₹{listing.pricePerUnit}</span>
                             <span className="text-[10px] text-slate-500 font-bold ml-0.5">/{listing.unit}</span>
                         </div>
+
+                        {/* Live Update Pulse */}
+                        <AnimatePresence>
+                            {isUpdated && (
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.8 }}
+                                    className="absolute inset-0 bg-emerald-500/10 pointer-events-none z-20 flex items-center justify-center"
+                                >
+                                    <div className="bg-emerald-600 text-white text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-lg flex items-center gap-1.5 animate-bounce">
+                                        <Zap className="h-3 w-3 fill-current" />
+                                        Just Updated
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                 </Link>
 
