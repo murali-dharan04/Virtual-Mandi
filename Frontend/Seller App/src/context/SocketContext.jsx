@@ -29,7 +29,7 @@ export const SocketProvider = ({ children }) => {
         // Use the same BASE_URL as API requests
         const newSocket = io(BASE_URL, {
             auth: { token },
-            transports: ["websocket"]
+            transports: ["websocket", "polling"]
         });
 
         newSocket.on("connect", () => {

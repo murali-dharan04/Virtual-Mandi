@@ -26,15 +26,7 @@ load_dotenv()
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = r"d:\Virtual-Mandi-main\silver-tape-489018-p6-5a3224373280.json"
 
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {
-    "origins": [
-        "http://localhost:5173", 
-        "http://localhost:5174", 
-        "https://virtual-mandi-buyer.vercel.app", 
-        "https://virtual-mandi-seller.vercel.app"
-    ],
-    "credentials": True
-}})
+CORS(app, supports_credentials=True, origins="*")
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 
 # -------------------- CONFIG --------------------
@@ -85,6 +77,10 @@ def missing_token_callback(error):
 def home():
     return jsonify({"message": "Virtual Mandi Backend Running Successfully!"})
 
+@app.route("/api/ping", methods=["GET"])
+def ping():
+    return jsonify({"message": "pong"})
+
 @app.route("/api/test-db", methods=["GET"])
 def test_db():
     try:
@@ -105,8 +101,10 @@ def test_db():
 # -------------------- AUTH ROUTES --------------------
 @app.route("/api/auth/register", methods=["POST"])
 def register():
+    print(f"DEBUG: Register request received from {request.remote_addr}")
     try:
-        data = request.get_json()
+        data = request.get_json(force=True)
+        print(f"DEBUG: Register data: {data}")
         log_to_file(f"Registering user with data: {data}")
         if not data:
             return jsonify({"error": "No data provided"}), 400
@@ -198,45 +196,49 @@ def register():
 
 @app.route("/api/auth/login", methods=["POST"])
 def login():
-    data = request.get_json()
-    if not data:
-        return jsonify({"error": "No data provided"}), 400
+    print("LOG: Login attempt started")
+    try:
+        data = request.get_json(force=True)
+        print(f"LOG: Data: {data}")
+        email = data.get("email")
+        password = data.get("password")
+        role = data.get("role")
+        
+        print(f"LOG: Finding user {email}")
+        user = mongo.db.Users.find_one({"email": email})
+        if not user:
+            print("LOG: User not found")
+            return jsonify({"error": "User not found"}), 404
+            
+        print("LOG: Checking password")
+        if not bcrypt.checkpw(password.encode("utf-8"), user["password"]):
+            print("LOG: Invalid password")
+            return jsonify({"error": "Invalid password"}), 401
+            
+        access_token = create_access_token(identity=str(user["_id"]))
 
-    email = data.get("email")
-    password = data.get("password")
-    role = data.get("role") # Expected by frontend apps
+        if role and user["role"] != role:
+            app_name = "Seller Dashboard" if user["role"] == "farmer" else "Buyer App"
+            return jsonify({"error": f"Account mismatch. This is a {user['role']} account. Please use the {app_name}."}), 403
 
-    if not all([email, password]):
-        return jsonify({"error": "Email and password required"}), 400
-
-    user = mongo.db.Users.find_one({"email": email})
-    if not user:
-        return jsonify({"error": "User not found"}), 404
-
-    if not bcrypt.checkpw(password.encode("utf-8"), user["password"]):
-        return jsonify({"error": "Invalid password. Please check your credentials."}), 401
-
-    if role and user["role"] != role:
-        app_name = "Seller Dashboard" if user["role"] == "farmer" else "Buyer App"
-        return jsonify({"error": f"Account mismatch. This is a {user['role']} account. Please use the {app_name}."}), 403
-
-    access_token = create_access_token(identity=str(user["_id"]))
-    
-    # Matching frontend expectation
-    user_data = {
-        "id": str(user["_id"]),
-        "name": user["name"],
-        "email": user["email"],
-        "role": user["role"],
-        "location": user.get("location", "Delhi")
-    }
-
-    return jsonify({
-        "message": "Login successful",
-        "access_token": access_token,
-        "role": user["role"],
-        "user": user_data
-    }), 200
+        user_data = {
+            "id": str(user["_id"]),
+            "name": user["name"],
+            "email": user["email"],
+            "role": user["role"],
+            "location": user.get("location", "")
+        }
+        return jsonify({
+            "message": "Login successful",
+            "access_token": access_token,
+            "role": user["role"],
+            "user": user_data
+        }), 200
+    except Exception as e:
+        import traceback
+        print(f"LOGIN ERROR: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({"error": str(e)}), 500
 
 # -------------------- OTP & PASSWORD RESET --------------------
 
