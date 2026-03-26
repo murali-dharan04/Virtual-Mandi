@@ -1,4 +1,4 @@
-export const BASE_URL = "https://virtual-mandi.onrender.com";
+export const BASE_URL = "http://localhost:5000";
 
 const getToken = () => localStorage.getItem("sellerToken");
 
@@ -56,6 +56,12 @@ export const sellerApi = {
         });
         const data = await res.json();
         console.log("DEBUG: Seller Register Response", data);
+        if (data.access_token) {
+            localStorage.setItem("sellerToken", data.access_token);
+            if (data.user) {
+                localStorage.setItem("sellerUser", JSON.stringify(data.user));
+            }
+        }
         return data;
     },
     // Forgot Password flow
@@ -128,6 +134,14 @@ export const sellerApi = {
     },
     getDashboardStats: async () => {
         const res = await fetch(`${BASE_URL}/seller/dashboard-stats`, { headers: headers() });
+        return await res.json();
+    },
+    getRevenueChart: async () => {
+        const res = await fetch(`${BASE_URL}/seller/revenue-chart`, { headers: headers() });
+        return await res.json();
+    },
+    getTransactions: async () => {
+        const res = await fetch(`${BASE_URL}/api/transactions`, { headers: headers() });
         return await res.json();
     },
     getOrderById: async (id) => {
@@ -227,15 +241,7 @@ export const sellerApi = {
         const res = await fetch(`${BASE_URL}/api/market-prices?state=${state}`, { headers: headers() });
         return await res.json();
     },
-    // AI Image Analysis
-    analyzeImage: async (imageUrl, originalFilename = "") => {
-        const res = await fetch(`${BASE_URL}/api/analyze-image`, {
-            method: "POST",
-            headers: headers(),
-            body: JSON.stringify({ image_url: imageUrl, original_filename: originalFilename }),
-        });
-        return await res.json();
-    },
+
     // New PRD Features
     detectDisease: async (file) => {
         const formData = new FormData();

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { api, BASE_URL } from "@/services/api";
+import { joinRoom } from "@/services/socketService";
 
 const AuthContext = createContext(undefined);
 
@@ -33,6 +34,7 @@ export const AuthProvider = ({ children }) => {
                         const userData = { ...data, token };
                         setUser(userData);
                         localStorage.setItem("buyerUser", JSON.stringify(userData));
+                        joinRoom(data.id);
                     }
                 } catch (err) {
                     console.error("Failed to restore buyer session:", err);
@@ -50,6 +52,7 @@ export const AuthProvider = ({ children }) => {
                 setUser(userData);
                 localStorage.setItem("buyerUser", JSON.stringify(userData));
                 localStorage.setItem("buyerToken", data.access_token);
+                joinRoom(data.user.id || data.user._id);
                 return true;
             }
             throw new Error(data.error || "Login failed");

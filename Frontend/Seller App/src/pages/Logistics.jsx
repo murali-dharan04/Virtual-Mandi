@@ -1,14 +1,19 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { Truck, MapPin, Navigation, Phone, Gauge, CreditCard, ChevronRight } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+    Truck, MapPin, Navigation, Phone, Gauge, 
+    CreditCard, ChevronRight, Search, Filter 
+} from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { sellerApi } from "@/lib/api";
+import PageTransition from "@/components/PageTransition";
 
 const Logistics = () => {
     const [vehicles, setVehicles] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [search, setSearch] = useState("");
 
     useEffect(() => {
         const fetchLogistics = async () => {
@@ -16,7 +21,7 @@ const Logistics = () => {
                 const data = await sellerApi.getNearbyLogistics();
                 setVehicles(data);
             } catch (err) {
-                console.error("Failed to fetch logistics:", err);
+                console.error(err);
             } finally {
                 setIsLoading(false);
             }
@@ -24,104 +29,131 @@ const Logistics = () => {
         fetchLogistics();
     }, []);
 
+    const filtered = vehicles.filter(v => 
+        (v.type || "").toLowerCase().includes(search.toLowerCase()) ||
+        (v.driver || "").toLowerCase().includes(search.toLowerCase())
+    );
+
+    if (isLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center py-40 gap-4">
+                <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
+                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Scanning Mandi Logistics...</p>
+            </div>
+        );
+    }
+
     return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
-            <div className="relative overflow-hidden rounded-[3rem] bg-slate-950 p-12 shadow-2xl border border-white/5">
-                <div className="absolute -bottom-20 -left-20 h-64 w-64 bg-blue-500/10 blur-[100px] animate-pulse-soft" />
-                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <PageTransition>
+            <div className="max-w-2xl mx-auto pb-24 px-2">
+                {/* Compact Header */}
+                <div className="flex items-center justify-between mb-6">
                     <div>
-                        <Badge className="mb-4 bg-blue-500/20 text-blue-400 border-none px-4 py-1.5 backdrop-blur-xl">Smart Matching</Badge>
-                        <h1 className="text-5xl font-black text-white tracking-tighter italic leading-none mb-4">Logistics Core</h1>
-                        <p className="text-slate-400 text-lg font-medium max-w-xl">
-                            Real-time transport matching for your harvest. Find verified drivers nearby and optimize your supply chain.
-                        </p>
+                        <h1 className="text-xl font-black text-slate-900 dark:text-white uppercase italic tracking-tight leading-none">Logistics</h1>
+                        <p className="text-[10px] font-bold text-slate-500 mt-1 uppercase tracking-widest">Nearby Transport</p>
                     </div>
-                    <div className="flex gap-4">
-                        <div className="bg-white/5 border border-white/10 rounded-[2rem] p-6 backdrop-blur-xl">
-                            <p className="text-slate-500 font-bold text-[10px] uppercase tracking-widest mb-2">Nearby Drivers</p>
-                            <p className="text-3xl font-black text-white italic leading-none">12</p>
-                        </div>
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
+                        <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
+                        <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest">{vehicles.length} ACTIVE DRIVERS</span>
                     </div>
                 </div>
-            </div>
 
-            <div className="grid grid-cols-1 gap-6">
-                {isLoading ? (
-                    <div className="flex items-center justify-center py-20 bg-slate-50 dark:bg-slate-900/50 rounded-[3rem] border-2 border-dashed border-slate-100 dark:border-slate-800">
-                        <div className="flex flex-col items-center gap-4">
-                            <div className="h-10 w-10 border-4 border-slate-200 border-t-blue-500 rounded-full animate-spin" />
-                            <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Scanning ONDC Logistics Mesh...</p>
-                        </div>
+                {/* Location Detection */}
+                <div className="bg-slate-900 rounded-2xl p-4 mb-6 shadow-lg border border-white/5 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-4 opacity-10">
+                        <Navigation className="h-12 w-12 text-white" />
                     </div>
-                ) : (
-                    vehicles.map((v, idx) => (
-                        <motion.div 
-                            key={idx}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: idx * 0.1 }}
-                        >
-                            <Card className="rounded-[2.5rem] border-slate-100 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl hover:shadow-[0_20px_50px_rgba(0,0,0,0.04)] transition-all group overflow-hidden">
-                                <CardContent className="p-0">
-                                    <div className="flex flex-col md:flex-row">
-                                        <div className="p-8 flex-1 space-y-6">
-                                            <div className="flex items-start justify-between">
-                                                <div className="flex items-center gap-5">
-                                                    <div className="h-16 w-16 rounded-[1.5rem] bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
-                                                        <Truck className="h-8 w-8 text-white" />
-                                                    </div>
-                                                    <div>
-                                                        <h3 className="text-2xl font-black italic text-slate-900 dark:text-white leading-none mb-1">{v.type}</h3>
-                                                        <p className="text-slate-400 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5">
-                                                            <Phone className="h-3 w-3" /> Driver: {v.driver}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <Badge className="bg-emerald-500/10 text-emerald-600 border-none px-4 py-1 font-black">Available Now</Badge>
-                                            </div>
+                    <div className="relative z-10 flex flex-col gap-1">
+                        <span className="text-[8px] font-black text-blue-400 uppercase tracking-[0.2em]">Pickup Location</span>
+                        <p className="text-xs font-bold text-white uppercase italic">Salem District Mandi Compound</p>
+                    </div>
+                </div>
 
-                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                                                <div className="space-y-1">
-                                                    <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest flex items-center gap-1.5"><Gauge className="h-3 w-3" /> Capacity</p>
-                                                    <p className="text-lg font-black text-slate-900 dark:text-white leading-none">{v.capacity}</p>
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest flex items-center gap-1.5"><Navigation className="h-3 w-3" /> Distance</p>
-                                                    <p className="text-lg font-black text-slate-900 dark:text-white leading-none">{v.distance}</p>
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest flex items-center gap-1.5"><CreditCard className="h-3 w-3" /> Est. Cost</p>
-                                                    <p className="text-lg font-black text-blue-600 leading-none">₹{v.cost_est}</p>
-                                                </div>
-                                            </div>
+                {/* Search Bar */}
+                <div className="relative mb-6">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <input 
+                        type="text"
+                        placeholder="Search vehicle or driver..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="w-full h-11 pl-11 pr-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm text-[11px] font-bold focus:ring-2 focus:ring-blue-500 transition-all outline-none"
+                    />
+                </div>
+
+                {/* Vehicle Grid */}
+                <div className="space-y-3">
+                    <AnimatePresence>
+                        {filtered.map((v, i) => (
+                            <motion.div 
+                                key={i}
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                transition={{ delay: i * 0.05 }}
+                                className="group relative bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 shadow-sm hover:shadow-md transition-all active:scale-[0.99] cursor-pointer overflow-hidden"
+                            >
+                                <div className="flex justify-between items-start mb-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-10 w-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                                            <Truck className="h-5 w-5 text-white" />
                                         </div>
-                                        
-                                        <div className="bg-slate-50 dark:bg-slate-800/50 p-6 md:w-48 flex items-center justify-center border-l border-slate-100 dark:border-slate-800">
-                                            <Button className="w-full md:w-auto h-16 w-16 rounded-[1.5rem] bg-white dark:bg-slate-900 hover:bg-slate-900 hover:text-white text-slate-900 dark:text-white font-black shadow-sm group transition-all">
-                                                <ChevronRight className="h-6 w-6 group-hover:translate-x-1 transition-transform" />
-                                            </Button>
+                                        <div>
+                                            <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase leading-none mb-1">{v.type}</h3>
+                                            <div className="flex items-center gap-1.5">
+                                                <Phone className="h-2.5 w-2.5 text-slate-400" />
+                                                <p className="text-[9px] font-bold text-slate-500">{v.driver}</p>
+                                            </div>
                                         </div>
                                     </div>
-                                </CardContent>
-                            </Card>
-                        </motion.div>
-                    ))
+                                    <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none px-2 py-0 text-[8px] font-black tracking-widest uppercase">Available</Badge>
+                                </div>
+
+                                <div className="grid grid-cols-3 gap-2 py-3 border-y border-slate-50 dark:border-slate-800/50">
+                                    <div className="text-center">
+                                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Capacity</p>
+                                        <p className="text-[10px] font-black text-slate-900 dark:text-white uppercase leading-none">{v.capacity}</p>
+                                    </div>
+                                    <div className="text-center border-x border-slate-100 dark:border-slate-800 px-2">
+                                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Distance</p>
+                                        <p className="text-[10px] font-black text-slate-900 dark:text-white uppercase leading-none">{v.distance}</p>
+                                    </div>
+                                    <div className="text-center">
+                                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Rate/km</p>
+                                        <p className="text-[10px] font-black text-blue-600 dark:text-blue-400 leading-none">₹{v.cost_est}</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-between mt-3">
+                                    <div className="flex items-center gap-2">
+                                        <CreditCard className="h-3 w-3 text-slate-400" />
+                                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">ONDC Verified Payout</span>
+                                    </div>
+                                    <Button className="h-8 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[9px] font-black uppercase tracking-widest shadow-md active:scale-95 transition-all">
+                                        Book Now
+                                    </Button>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </AnimatePresence>
+                </div>
+
+                {filtered.length === 0 && (
+                    <div className="text-center py-20">
+                        <div className="h-16 w-16 rounded-full bg-slate-50 dark:bg-slate-900 flex items-center justify-center mx-auto mb-4 border border-slate-100 dark:border-slate-800 text-slate-300">
+                            <Truck className="h-8 w-8" />
+                        </div>
+                        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">No nearby vehicles found</p>
+                        <Button 
+                            variant="link" 
+                            className="text-[10px] font-black uppercase tracking-widest text-blue-600 mt-2"
+                        >
+                            Broadcast Load Requirement
+                        </Button>
+                    </div>
                 )}
             </div>
-            
-            <div className="bg-slate-950 p-10 rounded-[3rem] border border-white/5 flex flex-col md:flex-row items-center justify-between gap-8">
-                <div className="flex flex-col gap-4">
-                    <p className="text-white text-2xl font-black italic">Ready to move your produce?</p>
-                    <div className="flex items-center gap-3">
-                        <MapPin className="h-5 w-5 text-blue-500" />
-                        <p className="text-slate-400 font-medium">Pickup location detected: <span className="text-white">Salem District Mandi Compound</span></p>
-                    </div>
-                </div>
-                <Button className="h-16 px-12 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black uppercase tracking-widest shadow-xl shadow-blue-900/20">
-                    Post Bulk Load Requirement
-                </Button>
-            </div>
-        </motion.div>
+        </PageTransition>
     );
 };
 

@@ -20,8 +20,8 @@ const gradeColors = {
 const ListingCard = ({ listing, index, allListings }) => {
     const imageUrl = listing.imageUrl || listing.image_url;
 
-    // Simulated urgency data
-    const views = listing.views || Math.floor(Math.random() * 500) + 100;
+    // Real view count from backend
+    const views = listing.views || 0;
 
     return (
         <motion.div
@@ -34,12 +34,13 @@ const ListingCard = ({ listing, index, allListings }) => {
             <div className="group block overflow-hidden rounded-2xl bg-white border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300">
                 <Link to={`/product/${listing.id}`} state={{ listing, allListings, currentIndex: index }}>
                     {/* Compact Image */}
-                    <div className="relative h-40 w-full bg-slate-100 overflow-hidden">
+                    <div className="relative h-36 w-full bg-slate-100 overflow-hidden">
                         {imageUrl ? (
                             <img
                                 src={imageUrl}
                                 alt={listing.cropName}
                                 className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                loading="lazy"
                             />
                         ) : (
                             <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-emerald-50 to-emerald-100">
@@ -59,15 +60,15 @@ const ListingCard = ({ listing, index, allListings }) => {
                         </div>
 
                         {/* Price Badge */}
-                        <div className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-sm rounded-xl px-3 py-1.5 shadow-sm z-10 border border-white/20">
-                            <span className="text-lg font-bold text-slate-800">₹{listing.pricePerUnit}</span>
-                            <span className="text-xs text-slate-500 ml-0.5">/{listing.unit}</span>
+                        <div className="absolute bottom-2 right-2 bg-white/95 backdrop-blur-sm rounded-lg px-2.5 py-1 shadow-sm z-10 border border-white/20">
+                            <span className="text-base font-black text-slate-800 tracking-tight">₹{listing.pricePerUnit}</span>
+                            <span className="text-[10px] text-slate-500 font-bold ml-0.5">/{listing.unit}</span>
                         </div>
                     </div>
                 </Link>
 
-                {/* Info Section - Compact */}
-                <div className="p-4">
+                {/* Info Section - Highly Compact */}
+                <div className="p-3">
                     <Link to={`/product/${listing.id}`} state={{ listing, allListings, currentIndex: index }}>
                         <div className="flex items-start justify-between mb-2">
                             <div>
@@ -92,12 +93,12 @@ const ListingCard = ({ listing, index, allListings }) => {
                             </span>
                         </div>
 
-                        <div className="flex items-center gap-3 text-[11px] font-medium text-slate-500 mb-4">
-                            <span className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-md">
-                                <MapPin className="h-3 w-3 text-emerald-600" /> {listing.distance || 2.5} km
+                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 mb-3">
+                            <span className="flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-100">
+                                <MapPin className="h-2.5 w-2.5 text-emerald-600" /> {listing.distance || 0.5} km
                             </span>
-                            <span className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-md">
-                                <Clock className="h-3 w-3 text-amber-600" /> {listing.deliveryEstimate || "Express Ready"}
+                            <span className="flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-100">
+                                <Clock className="h-2.5 w-2.5 text-amber-600" /> {listing.deliveryEstimate || "Ready"}
                             </span>
                         </div>
                     </Link>

@@ -13,6 +13,7 @@ import CreateListing from "./pages/CreateListing";
 import EditListing from "./pages/EditListing";
 import Orders from "./pages/Orders";
 import OrderDetails from "./pages/OrderDetails";
+import Transactions from "./pages/Transactions";
 import Support from "./pages/Support";
 import WeatherInsights from "./pages/WeatherInsights";
 import MarketTrends from "./pages/MarketTrends";
@@ -22,7 +23,9 @@ import ForgotPassword from "./pages/ForgotPassword";
 import DiseaseLab from "./pages/DiseaseLab";
 import Logistics from "./pages/Logistics";
 import AdminDash from "./pages/AdminDash";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
+import { SocketProvider } from "@/context/SocketContext";
 
 const queryClient = new QueryClient();
 
@@ -57,8 +60,9 @@ const App = () => {
     return (
         <QueryClientProvider client={queryClient}>
             <TooltipProvider>
-                <Toaster />
-                <Sonner />
+                <SocketProvider>
+                    <Toaster />
+                    <Sonner />
                 {showOnboarding && (
                     <LanguageOnboarding onComplete={() => setShowOnboarding(false)} />
                 )}
@@ -74,15 +78,18 @@ const App = () => {
                         <Route path="/listings/edit/:id" element={<ProtectedRoute><AppLayout><EditListing /></AppLayout></ProtectedRoute>} />
                         <Route path="/orders" element={<ProtectedRoute><AppLayout><Orders /></AppLayout></ProtectedRoute>} />
                         <Route path="/orders/:id" element={<ProtectedRoute><AppLayout><OrderDetails /></AppLayout></ProtectedRoute>} />
+                        <Route path="/transactions" element={<ProtectedRoute><AppLayout><Transactions /></AppLayout></ProtectedRoute>} />
                         <Route path="/support" element={<ProtectedRoute><AppLayout><Support /></AppLayout></ProtectedRoute>} />
                         <Route path="/dashboard/weather" element={<ProtectedRoute><AppLayout><WeatherInsights /></AppLayout></ProtectedRoute>} />
                         <Route path="/dashboard/trends" element={<ProtectedRoute><AppLayout><MarketTrends /></AppLayout></ProtectedRoute>} />
                         <Route path="/dashboard/disease-lab" element={<ProtectedRoute><AppLayout><DiseaseLab /></AppLayout></ProtectedRoute>} />
                         <Route path="/dashboard/logistics" element={<ProtectedRoute><AppLayout><Logistics /></AppLayout></ProtectedRoute>} />
+                        <Route path="/profile" element={<ProtectedRoute><AppLayout><Profile /></AppLayout></ProtectedRoute>} />
                         <Route path="/admin" element={<ProtectedRoute><AppLayout><AdminDash /></AppLayout></ProtectedRoute>} />
                         <Route path="*" element={<NotFound />} />
                     </Routes>
                 </BrowserRouter>
+                </SocketProvider>
             </TooltipProvider>
         </QueryClientProvider>
     );

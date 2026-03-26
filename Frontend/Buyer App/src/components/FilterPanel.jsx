@@ -1,35 +1,25 @@
+import { useState, useEffect } from "react";
 import { X, MapPin, CheckSquare } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { api } from "@/services/api";
 
 const categories = ["All", "Vegetables", "Fruits", "Grains", "Spices", "Pulses"];
 const grades = ["All", "A", "B", "C"];
 const sortOptions = [
     { value: "price-asc", label: "Lowest Price" },
     { value: "price-desc", label: "Highest Price" },
+    { value: "newest", label: "Newest Arrivals" },
     { value: "distance", label: "Nearest" },
     { value: "quality", label: "Highest Quality" },
 ];
 
-const DISTRICTS = [
-    "All Districts",
-    "Nashik", "Pune", "Nagpur", "Amravati",
-    "Ludhiana", "Amritsar", "Patiala", "Jalandhar",
-    "Karnal", "Hisar", "Rohtak", "Ambala",
-    "Azadpur (Delhi)", "Shahadra",
-    "Coimbatore", "Salem", "Madurai", "Trichy",
-    "Hyderabad", "Warangal", "Vijayawada",
-    "Hubli", "Belgaum", "Mysuru",
-    "Jaipur", "Jodhpur", "Udaipur",
-    "Indore", "Bhopal", "Gwalior",
-    "Patna", "Muzaffarpur", "Gaya",
-    "Lucknow", "Varanasi", "Agra", "Kanpur",
-];
+import { statesData } from "@/data/statesData";
 
 const availability = ["All", "In Stock", "Pre-order"];
 
 const FilterSection = ({ title, children }) => (
     <div>
-        <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground">{title}</p>
+        <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">{title}</p>
         {children}
     </div>
 );
@@ -39,7 +29,7 @@ const ChipButton = ({ active, onClick, children }) => (
         onClick={onClick}
         className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all duration-200 ${active
             ? "bg-emerald-600 text-white shadow-sm"
-            : "bg-secondary text-secondary-foreground hover:bg-emerald-50 hover:text-emerald-700"
+            : "bg-secondary text-secondary-foreground hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-emerald-900/30 dark:hover:text-emerald-400"
             }`}
     >
         {children}
@@ -52,6 +42,7 @@ const FilterPanel = ({ open, onClose, filters, onFilterChange }) => {
     const activeCount = [
         filters.category !== "All",
         filters.qualityGrade !== "All",
+        filters.state && filters.state !== "All States",
         filters.district && filters.district !== "All Districts",
         filters.availability && filters.availability !== "All",
         filters.maxPrice < 10000,
@@ -62,9 +53,23 @@ const FilterPanel = ({ open, onClose, filters, onFilterChange }) => {
         qualityGrade: "All",
         sortBy: "price-asc",
         maxPrice: 10000,
+        state: "All States",
         district: "All Districts",
         availability: "All",
     });
+
+    const handleStateChange = (state) => {
+        onFilterChange({
+            ...filters,
+            state: state,
+            district: "All Districts"
+        });
+    };
+
+    const states = ["All States", ...Object.keys(statesData)];
+    const districts = filters.state !== "All States" 
+        ? ["All Districts", ...statesData[filters.state]]
+        : ["All Districts"];
 
     return (
         <AnimatePresence>
@@ -74,7 +79,7 @@ const FilterPanel = ({ open, onClose, filters, onFilterChange }) => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-40 bg-foreground/20 backdrop-blur-sm md:hidden"
+                        className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm md:hidden"
                         onClick={onClose}
                     />
                     <motion.div
@@ -129,21 +134,39 @@ const FilterPanel = ({ open, onClose, filters, onFilterChange }) => {
                                 </div>
                             </FilterSection>
 
-                            {/* District */}
-                            <FilterSection title="District">
-                                <div className="relative">
-                                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-emerald-500 pointer-events-none" />
-                                    <select
-                                        value={filters.district || "All Districts"}
-                                        onChange={(e) => update("district", e.target.value)}
-                                        className="w-full appearance-none rounded-xl border border-border bg-background pl-8 pr-4 py-2.5 text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                                    >
-                                        {DISTRICTS.map(d => (
-                                            <option key={d} value={d}>{d}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </FilterSection>
+                            {/* Location Filtering */}
+                            <div className="space-y-4">
+                                <FilterSection title="State">
+                                    <div className="relative">
+                                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-emerald-500 pointer-events-none" />
+                                        <select
+                                            value={filters.state || "All States"}
+                                            onChange={(e) => handleStateChange(e.target.value)}
+                                            className="w-full appearance-none rounded-xl border border-border bg-background pl-8 pr-4 py-2.5 text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                                        >
+                                            {states.map(s => (
+                                                <option key={s} value={s}>{s}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </FilterSection>
+
+                                <FilterSection title="District">
+                                    <div className="relative">
+                                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-emerald-500 pointer-events-none" />
+                                        <select
+                                            value={filters.district || "All Districts"}
+                                            onChange={(e) => update("district", e.target.value)}
+                                            disabled={filters.state === "All States"}
+                                            className="w-full appearance-none rounded-xl border border-border bg-background pl-8 pr-4 py-2.5 text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 disabled:opacity-50"
+                                        >
+                                            {districts.map(d => (
+                                                <option key={d} value={d}>{d}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </FilterSection>
+                            </div>
 
                             {/* Availability */}
                             <FilterSection title="Availability">

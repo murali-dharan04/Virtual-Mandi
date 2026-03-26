@@ -1,26 +1,23 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { Card, CardContent } from "@/components/ui/card";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+    CheckCircle2, XCircle, ChevronRight, ShoppingCart, 
+    User, Package, IndianRupee, Calendar, Clock, Filter 
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { OrderStatusBadge } from "@/components/OrderStatusBadge";
 import { sellerApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import PageTransition from "@/components/PageTransition";
 
 const Orders = () => {
     const navigate = useNavigate();
     const { toast } = useToast();
     const [orders, setOrders] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [filter, setFilter] = useState("all");
 
     const fetchOrders = async () => {
         try {
@@ -38,7 +35,7 @@ const Orders = () => {
                 })));
             }
         } catch (err) {
-            console.error("Failed to fetch orders:", err);
+            console.error(err);
         } finally {
             setIsLoading(false);
         }
@@ -46,184 +43,175 @@ const Orders = () => {
 
     useEffect(() => {
         fetchOrders();
-        const interval = setInterval(fetchOrders, 5000); // Poll every 5s
+        const interval = setInterval(fetchOrders, 10000);
         return () => clearInterval(interval);
     }, []);
 
     const handleUpdateStatus = async (e, orderId, status) => {
-        e.stopPropagation(); // Prevent navigation to details
+        e.stopPropagation();
         try {
             const res = await sellerApi.updateOrderStatus(orderId, status);
             if (res.message) {
-                toast({
-                    title: `Order ${status === "accepted" ? "Accepted" : "Rejected"}`,
-                    description: `Order has been ${status}.`
-                });
-                // Update local state
+                toast({ title: `Order ${status === "accepted" ? "Accepted" : "Rejected"}` });
                 setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o));
             }
         } catch (err) {
-            toast({ title: "Error", description: "Failed to update order status", variant: "destructive" });
+            toast({ title: "Error", variant: "destructive" });
         }
     };
 
-    if (isLoading) {
-        return <div className="flex items-center justify-center py-20">Loading orders...</div>;
-    }
+    const stats = {
+        total: orders.length,
+        pending: orders.filter(o => o.status === "pending" || o.status === "Pending").length,
+        revenue: orders.filter(o => o.status === "accepted" || o.status === "Completed").reduce((sum, o) => sum + o.totalPrice, 0)
+    };
 
-    if (orders.length === 0) {
+    const filtered = orders.filter(o => {
+        if (filter === "all") return true;
+        if (filter === "pending") return o.status === "pending" || o.status === "Pending";
+        if (filter === "completed") return o.status === "accepted" || o.status === "Completed";
+        return true;
+    });
+
+    if (isLoading) {
         return (
-            <div className="flex flex-col items-center justify-center py-24 bg-slate-50 dark:bg-slate-900 rounded-[3rem] border-2 border-dashed border-slate-200 dark:border-slate-800 px-6 text-center">
-                <div className="h-20 w-20 rounded-full bg-white dark:bg-slate-800 flex items-center justify-center mb-6 shadow-sm">
-                    <CheckCircle2 className="h-8 w-8 text-slate-200 dark:text-slate-700" />
-                </div>
-                <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2 italic">Zero Orders Yet</h3>
-                <p className="text-slate-400 text-sm font-medium mb-8 max-w-xs mx-auto">
-                    Your incoming harvest orders will appear here. List more produce to increase your visibility!
-                </p>
-                <Button 
-                    onClick={() => navigate("/listings/new")} 
-                    className="h-14 px-10 rounded-2xl bg-[#2E7D32] hover:bg-[#1B5E20] text-white font-black uppercase tracking-widest shadow-lg shadow-emerald-900/10"
-                >
-                    Create New Listing
-                </Button>
+            <div className="flex flex-col items-center justify-center py-40 gap-4">
+                <div className="h-10 w-10 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent" />
+                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Syncing Orders...</p>
             </div>
         );
     }
 
-    const formatCurrency = (val) => {
-        try {
-            return (val || 0).toLocaleString("en-IN");
-        } catch (e) {
-            return "0";
-        }
-    };
-
     return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-            <div className="relative overflow-hidden rounded-[2.5rem] bg-slate-950 p-10 shadow-2xl border border-white/5 mb-8">
-                <div className="absolute -top-10 -right-10 h-40 w-40 bg-blue-500/10 blur-[80px] animate-pulse-soft" />
-                <div className="relative z-10">
-                    <h1 className="text-4xl font-black text-white tracking-tighter italic">Incoming Orders</h1>
-                    <p className="text-slate-400 text-sm mt-2 font-medium tracking-wide uppercase">Track and manage your ONDC network transactions</p>
+        <PageTransition>
+            <div className="max-w-2xl mx-auto pb-24">
+                {/* Compact Header */}
+                <div className="flex items-center justify-between mb-6 px-2">
+                    <div>
+                        <h1 className="text-xl font-black text-slate-900 dark:text-white uppercase italic tracking-tight leading-none">Orders</h1>
+                        <p className="text-[10px] font-bold text-slate-500 mt-1 uppercase tracking-widest">Incoming Requests</p>
+                    </div>
+                    <div className="flex gap-1">
+                        {['all', 'pending', 'completed'].map((f) => (
+                            <button 
+                                key={f}
+                                onClick={() => setFilter(f)}
+                                className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${filter === f ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900' : 'bg-slate-100 text-slate-400 dark:bg-slate-800'}`}
+                            >
+                                {f}
+                            </button>
+                        ))}
+                    </div>
                 </div>
-            </div>
 
-            {/* Mobile card layout */}
-            <div className="space-y-3 md:hidden">
-                {orders.map((order) => (
-                    <Card
-                        key={order.id}
-                        className="shadow-[0_15px_35px_rgba(0,0,0,0.03)] cursor-pointer hover:shadow-[0_25px_50px_rgba(0,0,0,0.06)] transition-all duration-500 border-slate-100 rounded-[2rem] overflow-hidden group"
-                        onClick={() => navigate(`/orders/${order.id}`)}
-                    >
-                        <CardContent className="p-6">
-                            <div className="flex items-start justify-between gap-3">
-                                <div className="min-w-0 flex-1">
-                                    <p className="font-semibold">{order.cropName}</p>
-                                    <p className="text-sm text-muted-foreground">{order.buyerName}</p>
-                                </div>
-                                <OrderStatusBadge status={order.status} />
-                            </div>
-                            <div className="mt-3 flex items-center justify-between text-sm">
-                                <div className="flex gap-4">
-                                    <div>
-                                        <p className="text-muted-foreground text-xs">Qty</p>
-                                        <p className="font-medium">{order.quantity} {order.unit}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-muted-foreground text-xs">Total</p>
-                                        <p className="font-bold text-primary">₹{formatCurrency(order.totalPrice)}</p>
-                                    </div>
-                                </div>
-                            </div>
-                            {order.status === "Pending" && (
-                                <div className="mt-4 flex gap-2">
-                                    <Button
-                                        size="sm"
-                                        className="flex-1 h-9 gradient-hero"
-                                        onClick={(e) => handleUpdateStatus(e, order.id, "accepted")}
-                                    >
-                                        <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" /> Accept
-                                    </Button>
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
-                                        className="flex-1 h-9 text-destructive border-destructive/20 hover:bg-destructive/5"
-                                        onClick={(e) => handleUpdateStatus(e, order.id, "rejected")}
-                                    >
-                                        <XCircle className="mr-1.5 h-3.5 w-3.5" /> Reject
-                                    </Button>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-                ))}
-            </div>
+                {/* Inline Stats */}
+                <div className="grid grid-cols-3 gap-3 mb-6 px-2">
+                    <div className="bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Total</p>
+                        <p className="text-sm font-black text-slate-900 dark:text-white">{stats.total}</p>
+                    </div>
+                    <div className="bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">New</p>
+                        <p className="text-sm font-black text-rose-500">{stats.pending}</p>
+                    </div>
+                    <div className="bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Sales</p>
+                        <p className="text-sm font-black text-emerald-600 dark:text-emerald-400">₹{(stats.revenue / 1000).toFixed(1)}k</p>
+                    </div>
+                </div>
 
-            {/* Desktop table layout */}
-            <div className="hidden md:block rounded-[2rem] border border-slate-100 shadow-[0_20px_50px_rgba(0,0,0,0.03)] overflow-hidden bg-white">
-                <Table>
-                    <TableHeader>
-                        <TableRow className="bg-muted/50">
-                            <TableHead>Order ID</TableHead>
-                            <TableHead>Crop</TableHead>
-                            <TableHead>Buyer</TableHead>
-                            <TableHead>Quantity</TableHead>
-                            <TableHead>Amount</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {orders.map((order) => (
-                            <TableRow
+                {/* Orders Grid */}
+                <div className="space-y-3 px-2">
+                    <AnimatePresence>
+                        {filtered.map((order) => (
+                            <motion.div 
                                 key={order.id}
-                                className="hover:bg-muted/30 cursor-pointer transition-colors"
+                                layout
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                className="group bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 shadow-sm hover:shadow-md transition-all active:scale-[0.99] cursor-pointer"
                                 onClick={() => navigate(`/orders/${order.id}`)}
                             >
-                                <TableCell className="font-mono text-sm">{order.id}</TableCell>
-                                <TableCell className="font-medium">{order.cropName}</TableCell>
-                                <TableCell className="text-muted-foreground">{order.buyerName}</TableCell>
-                                <TableCell>{order.quantity} {order.unit}</TableCell>
-                                <TableCell className="font-semibold">₹{formatCurrency(order.totalPrice)}</TableCell>
-                                <TableCell><OrderStatusBadge status={order.status} /></TableCell>
-                                <TableCell className="text-right">
-                                    {order.status === "Pending" ? (
-                                        <div className="flex justify-end gap-2">
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                className="h-8 py-0 px-2 text-xs border-primary/20 hover:bg-primary/5 text-primary"
+                                <div className="flex justify-between items-start mb-3">
+                                    <div className="flex items-center gap-2">
+                                        <div className="h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                                            <User className="h-4 w-4 text-slate-500" />
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-black text-slate-900 dark:text-white uppercase leading-none">{order.buyerName}</p>
+                                            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">Buyer</p>
+                                        </div>
+                                    </div>
+                                    <OrderStatusBadge status={order.status} className="text-[8px] px-2 py-0.5" />
+                                </div>
+
+                                <div className="flex items-center justify-between py-3 border-y border-slate-50 dark:border-slate-800/50">
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-10 w-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center border border-emerald-100 dark:border-emerald-800/50">
+                                            <Package className="h-5 w-5 text-emerald-600" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase leading-none mb-1">{order.cropName}</h3>
+                                            <p className="text-[10px] font-bold text-slate-500">{order.quantity} {order.unit}</p>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-[14px] font-black text-slate-900 dark:text-white leading-none mb-1">₹{order.totalPrice.toLocaleString()}</p>
+                                        <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest italic">Total Amount</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-between mt-3">
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex items-center gap-1">
+                                            <Calendar className="h-3 w-3 text-slate-400" />
+                                            <span className="text-[9px] font-bold text-slate-500">{new Date(order.createdAt).toLocaleDateString()}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            <Clock className="h-3 w-3 text-slate-400" />
+                                            <span className="text-[9px] font-bold text-slate-500">{new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                        </div>
+                                    </div>
+
+                                    {(order.status === "pending" || order.status === "Pending") && (
+                                        <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                                            <Button 
+                                                size="sm" 
+                                                className="h-8 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-[9px] font-black uppercase tracking-widest shadow-md"
                                                 onClick={(e) => handleUpdateStatus(e, order.id, "accepted")}
                                             >
                                                 Accept
                                             </Button>
-                                            <Button
-                                                size="sm"
+                                            <Button 
                                                 variant="outline"
-                                                className="h-8 py-0 px-2 text-xs border-destructive/20 hover:bg-destructive/5 text-destructive"
+                                                size="sm" 
+                                                className="h-8 px-3 rounded-lg border-rose-100 text-rose-500 hover:bg-rose-50 text-[9px] font-black uppercase tracking-widest"
                                                 onClick={(e) => handleUpdateStatus(e, order.id, "rejected")}
                                             >
                                                 Reject
                                             </Button>
                                         </div>
-                                    ) : (
-                                        <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            className="h-8 text-xs text-muted-foreground"
-                                        >
-                                            View
-                                        </Button>
                                     )}
-                                </TableCell>
-                            </TableRow>
+                                    {(order.status !== "pending" && order.status !== "Pending") && (
+                                        <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-emerald-500 transition-colors" />
+                                    )}
+                                </div>
+                            </motion.div>
                         ))}
-                    </TableBody>
-                </Table>
+                    </AnimatePresence>
+                </div>
+
+                {filtered.length === 0 && (
+                    <div className="text-center py-20 px-6">
+                        <div className="h-16 w-16 rounded-full bg-slate-50 dark:bg-slate-900 flex items-center justify-center mx-auto mb-4 border border-slate-100 dark:border-slate-800 text-slate-300">
+                            <ShoppingCart className="h-8 w-8" />
+                        </div>
+                        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">No orders found</p>
+                    </div>
+                )}
             </div>
-        </motion.div>
+        </PageTransition>
     );
 };
 

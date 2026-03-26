@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import PageTransition from "@/components/PageTransition";
+import confetti from "canvas-confetti";
 
 // Normalize phone to international format
 const toWaNumber = (phone) => {
@@ -40,6 +41,7 @@ const ProductDetail = () => {
     const [sellerRating, setSellerRating] = useState(null);
     const [negotiationOpen, setNegotiationOpen] = useState(false);
     const [counterOffer, setCounterOffer] = useState(listing?.pricePerUnit ? Math.round(listing.pricePerUnit * 0.9) : 0);
+    const [showSuccessAnim, setShowSuccessAnim] = useState(false);
 
     const allListings = state?.allListings || [];
     const currentIndex = state?.currentIndex ?? -1;
@@ -125,7 +127,39 @@ const ProductDetail = () => {
 
             if (confirmedOrder && confirmedOrder.id) {
                 setOrderId(confirmedOrder.id);
-                setConfirmed(true);
+                // Trigger "Wowy" animation
+                setShowSuccessAnim(true);
+                
+                // Fire premium confetti burst
+                const duration = 2000;
+                const end = Date.now() + duration;
+                
+                const frame = () => {
+                    confetti({
+                        particleCount: 5,
+                        angle: 60,
+                        spread: 55,
+                        origin: { x: 0 },
+                        colors: ['#10b981', '#34d399', '#059669', '#ffffff']
+                    });
+                    confetti({
+                        particleCount: 5,
+                        angle: 120,
+                        spread: 55,
+                        origin: { x: 1 },
+                        colors: ['#10b981', '#34d399', '#059669', '#ffffff']
+                    });
+                    
+                    if (Date.now() < end) {
+                        requestAnimationFrame(frame);
+                    }
+                };
+                frame();
+                
+                setTimeout(() => {
+                    setShowSuccessAnim(false);
+                    setConfirmed(true);
+                }, 2000);
                 toast({ title: t("product.confirmed"), description: `Order successfully placed!` });
             }
         } catch (err) {
@@ -202,7 +236,7 @@ const ProductDetail = () => {
                     </div>
                 </div>
 
-                <div className="container max-w-6xl mx-auto px-4 py-8">
+                <div className="container max-w-6xl mx-auto px-4 py-4 md:py-6">
                     <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
                         {/* Left: Image Gallery */}
                         <div className="space-y-4">
@@ -284,21 +318,21 @@ const ProductDetail = () => {
                         <div className="space-y-6">
                             {/* Header */}
                             <div>
-                                <div className="flex items-center gap-3 mb-3">
-                                    <span className={`px-3 py-1 rounded-lg text-xs font-bold border ${gradeColors[listing.qualityGrade]}`}>
+                                <div className="flex items-center gap-2 mb-2">
+                                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest border ${gradeColors[listing.qualityGrade]}`}>
                                         Grade {listing.qualityGrade}
                                     </span>
                                     {listing.harvestDate && (
-                                        <span className="flex items-center gap-1 text-xs text-slate-400">
-                                            <Calendar className="h-3 w-3" /> Harvested {listing.harvestDate}
+                                        <span className="flex items-center gap-1 text-[10px] font-bold text-slate-400">
+                                            <Calendar className="h-3 w-3" /> {listing.harvestDate}
                                         </span>
                                     )}
                                 </div>
-                                <h1 className="text-3xl md:text-4xl font-bold text-slate-800 mb-1">{listing.cropName}</h1>
-                                <p className="text-slate-500 font-medium flex items-center gap-1.5">
-                                    by <span className="text-emerald-600 font-semibold">{listing.farmerName}</span>
+                                <h1 className="text-2xl md:text-3xl font-black text-slate-800 mb-0.5 tracking-tight italic">{listing.cropName}</h1>
+                                <p className="text-xs text-slate-500 font-bold flex items-center gap-1.5">
+                                    by <span className="text-emerald-600 uppercase tracking-widest">{listing.farmerName}</span>
                                     {listing.isVerified !== false && (
-                                        <CheckCircle2 className="h-4 w-4 text-emerald-500 fill-emerald-50" />
+                                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 fill-emerald-50" />
                                     )}
                                 </p>
                             </div>
@@ -695,6 +729,59 @@ const ProductDetail = () => {
                         </div>
                     )}
                 </div>
+
+                {/* SUCCESS ANIMATION OVERLAY */}
+                <AnimatePresence>
+                    {showSuccessAnim && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-[100] flex items-center justify-center bg-white/95 backdrop-blur-xl"
+                        >
+                            <div className="text-center">
+                                <motion.div
+                                    initial={{ scale: 0.5, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                                    className="relative mx-auto mb-8 flex h-40 w-40 items-center justify-center rounded-full bg-emerald-500 shadow-[0_20px_60px_-15px_rgba(16,185,129,0.5)]"
+                                >
+                                    <motion.div
+                                        initial={{ pathLength: 0 }}
+                                        animate={{ pathLength: 1 }}
+                                        transition={{ duration: 0.5, delay: 0.2 }}
+                                    >
+                                        <svg className="h-20 w-20 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                            <motion.path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    </motion.div>
+                                    {/* Pulse Ring */}
+                                    <motion.div
+                                        animate={{ scale: [1, 1.4], opacity: [0.5, 0] }}
+                                        transition={{ duration: 1.5, repeat: Infinity }}
+                                        className="absolute inset-0 rounded-full border-4 border-emerald-500"
+                                    />
+                                </motion.div>
+                                <motion.h2
+                                    initial={{ y: 20, opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    transition={{ delay: 0.3 }}
+                                    className="text-3xl font-black text-slate-900 italic tracking-tight"
+                                >
+                                    Order Confirmed! 🚜
+                                </motion.h2>
+                                <motion.p
+                                    initial={{ y: 20, opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    transition={{ delay: 0.4 }}
+                                    className="mt-2 text-slate-500 font-bold uppercase tracking-[0.2em] text-[10px]"
+                                >
+                                    Notifying Farmer Instantly
+                                </motion.p>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
         </PageTransition>
     );

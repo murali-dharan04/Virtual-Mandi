@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { api } from "@/services/api";
+import { onListingEvents } from "@/services/socketService";
 import SearchBar from "@/components/SearchBar";
 import ListingCard from "@/components/ListingCard";
 import FilterPanel from "@/components/FilterPanel";
@@ -36,6 +37,8 @@ const Home = () => {
         sortBy: searchParams.get("sort") === "price_asc" ? "price-asc" :
             searchParams.get("sort") === "price_desc" ? "price-desc" : "price-asc",
         maxPrice: parseInt(searchParams.get("maxPrice")) || 10000,
+        state: "All States",
+        district: "All Districts",
     });
 
     useEffect(() => {
@@ -62,10 +65,33 @@ const Home = () => {
         return () => clearTimeout(timer);
     }, [search]);
 
+    // Setup Socket.IO real-time listeners
+    useEffect(() => {
+        const unsubscribe = onListingEvents({
+            onCreate: (newListing) => {
+                setListings(prev => {
+                    // Prevent duplicates
+                    if (prev.some(l => l.id === newListing.id)) return prev;
+                    return [newListing, ...prev];
+                });
+            },
+            onUpdate: (updatedListing) => {
+                setListings(prev => prev.map(l => l.id === updatedListing.id ? { ...l, ...updatedListing } : l));
+            },
+            onDelete: ({ id }) => {
+                setListings(prev => prev.filter(l => l.id !== id));
+            }
+        });
+
+        return () => unsubscribe();
+    }, []);
+
     const filtered = useMemo(() => {
         let items = [...listings].filter((l) => {
             if (filters.category !== "All" && l.category !== filters.category) return false;
             if (filters.qualityGrade !== "All" && l.qualityGrade !== filters.qualityGrade) return false;
+            if (filters.state !== "All States" && l.state !== filters.state) return false;
+            if (filters.district !== "All Districts" && l.location !== filters.district) return false;
             if (l.pricePerUnit > filters.maxPrice) return false;
             return true;
         });
@@ -73,6 +99,7 @@ const Home = () => {
         switch (filters.sortBy) {
             case "price-asc": items.sort((a, b) => a.pricePerUnit - b.pricePerUnit); break;
             case "price-desc": items.sort((a, b) => b.pricePerUnit - a.pricePerUnit); break;
+            case "newest": items.sort((a, b) => b.id.toString().localeCompare(a.id.toString())); break;
             case "distance": items.sort((a, b) => a.distance - b.distance); break;
             case "quality": items.sort((a, b) => a.qualityGrade.localeCompare(b.qualityGrade)); break;
         }
@@ -80,13 +107,13 @@ const Home = () => {
     }, [search, filters, listings]);
 
     // Quick category chips
-    const categories = ["All", "Grains", "Vegetables", "Fruits", "Cooked Food"];
+    const categories = ["All", "Grains", "Vegetables", "Fruits"];
 
     return (
         <PageTransition>
             <div className="min-h-screen bg-background">
-                {/* Clean Hero Section */}
-                <div className="relative overflow-hidden bg-emerald-700 px-4 py-16 md:py-20">
+                {/* Compact Hero Section */}
+                <div className="relative overflow-hidden bg-emerald-700 px-4 py-8 md:py-10">
                     {/* Subtle gradient */}
                     <div className="absolute inset-0 bg-gradient-to-br from-emerald-900 via-emerald-700 to-teal-800" />
                     <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-400 rounded-full mix-blend-screen filter blur-3xl opacity-20 animate-pulse" />
@@ -94,17 +121,17 @@ const Home = () => {
 
                     <div className="container relative z-10 max-w-4xl mx-auto text-center">
                         <motion.div variants={containerVariants} initial="hidden" animate="show">
-                            <motion.div variants={itemVariants} className="inline-flex items-center gap-2 mb-4 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-white/80">
+                            <motion.div variants={itemVariants} className="inline-flex items-center gap-2 mb-3 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-white/80">
                                 <ShoppingBasket className="h-4 w-4" />
                                 <span className="text-xs font-semibold uppercase tracking-wider">Virtual Mandi</span>
                             </motion.div>
 
-                            <motion.h1 variants={itemVariants} className="mb-4 text-5xl md:text-7xl font-black tracking-tight text-white leading-tight">
+                            <motion.h1 variants={itemVariants} className="mb-2 text-4xl md:text-6xl font-black tracking-tight text-white leading-tight">
                                 Buy Fresh Produce <br />
                                 <span className="bg-gradient-to-r from-emerald-200 to-teal-100 bg-clip-text text-transparent">Directly from Farmers</span>
                             </motion.h1>
 
-                            <motion.p variants={itemVariants} className="mb-10 max-w-xl mx-auto text-lg md:text-xl text-emerald-50/70 font-medium leading-relaxed">
+                            <motion.p variants={itemVariants} className="mb-5 max-w-xl mx-auto text-base md:text-lg text-emerald-50/70 font-medium leading-relaxed">
                                 Search for grains, vegetables, fruits – all at fair prices, fresh from farms near you.
                             </motion.p>
 
@@ -119,58 +146,25 @@ const Home = () => {
                                             className="w-full h-14 bg-transparent border-none text-slate-800 placeholder-slate-400 focus:ring-0 text-lg font-medium pl-12 pr-4"
                                         />
                                     </div>
-                                    <button
-                                        onClick={() => setFiltersOpen(!filtersOpen)}
-                                        className={`h-12 px-6 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 ${filtersOpen ? 'bg-emerald-600 text-white' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'}`}
-                                    >
-                                        <SlidersHorizontal className="h-4 w-4" />
-                                        <span className="hidden sm:inline">Filters</span>
-                                    </button>
                                 </div>
                             </motion.div>
 
-                            {/* Intelligence Shortcuts */}
-                            <motion.div variants={itemVariants} className="mt-8 flex flex-wrap justify-center gap-4">
-                                <button 
-                                    onClick={() => navigate('/intelligence')}
-                                    className="flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-white/10 border border-white/20 hover:bg-white/20 transition-all group backdrop-blur-md"
-                                >
-                                    <div className="h-8 w-8 rounded-lg bg-emerald-400/20 flex items-center justify-center">
-                                        <Map className="h-4 w-4 text-emerald-300" />
-                                    </div>
-                                    <div className="text-left">
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-200 leading-none">Market Intelligence</p>
-                                        <p className="text-sm font-bold text-white mt-1">Demand Heatmap</p>
-                                    </div>
-                                </button>
-                                <button 
-                                    onClick={() => navigate('/intelligence')}
-                                    className="flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-white/10 border border-white/20 hover:bg-white/20 transition-all group backdrop-blur-md"
-                                >
-                                    <div className="h-8 w-8 rounded-lg bg-amber-400/20 flex items-center justify-center">
-                                        <TrendingUp className="h-4 w-4 text-amber-300" />
-                                    </div>
-                                    <div className="text-left">
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-amber-200 leading-none">Price Predictions</p>
-                                        <p className="text-sm font-bold text-white mt-1">Forecast Index</p>
-                                    </div>
-                                </button>
-                            </motion.div>
+                            {/* Intelligence Shortcuts Removed */}
                         </motion.div>
                     </div>
                 </div>
 
                 {/* Category Quick Chips & Mandi news */}
-                <div className="container max-w-6xl mx-auto px-4 py-4">
-                    <div className="flex flex-col lg:flex-row gap-6">
-                        <div className="flex-1 flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                <div className="container max-w-6xl mx-auto px-4 py-1.5">
+                    <div className="flex flex-col lg:flex-row gap-4">
+                        <div className="flex-1 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
                             {categories.map((cat) => (
                                 <motion.button
                                     key={cat}
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
                                     onClick={() => setFilters(f => ({ ...f, category: cat }))}
-                                    className={`whitespace-nowrap px-6 py-2.5 rounded-full text-sm font-bold border transition-all shadow-sm ${filters.category === cat
+                                    className={`whitespace-nowrap px-5 py-2 rounded-full text-xs font-bold border transition-all shadow-sm ${filters.category === cat
                                         ? 'bg-emerald-600 text-white border-emerald-600 shadow-emerald-200'
                                         : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-300 hover:text-emerald-700 hover:shadow-md'
                                         }`}
@@ -180,16 +174,16 @@ const Home = () => {
                             ))}
                         </div>
 
-                        {/* Mandi News Ticker - Ultimate Hub Feature */}
-                        <div className="hidden lg:flex items-center gap-3 bg-amber-50 border border-amber-100 rounded-2xl px-4 py-2 min-w-[300px]">
-                            <div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
-                            <span className="text-[10px] font-black uppercase text-amber-600 tracking-wider">Live News</span>
-                            <p className="text-xs font-bold text-amber-900 line-clamp-1">Onion prices expected to drop by 10% next week in Nasik Mandi.</p>
+                        {/* Mandi News Ticker */}
+                        <div className="hidden lg:flex items-center gap-3 bg-amber-50/50 border border-amber-100/50 rounded-xl px-4 py-1.5 min-w-[300px]">
+                            <div className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                            <span className="text-[9px] font-black uppercase text-amber-600 tracking-wider">Live News</span>
+                            <p className="text-[11px] font-bold text-amber-900/80 line-clamp-1">Onion prices expected to drop by 10% next week in Nasik Mandi.</p>
                         </div>
                     </div>
                 </div>
 
-                <div className="container max-w-6xl mx-auto px-4 py-4">
+                <div className="container max-w-6xl mx-auto px-4 pt-2 pb-4">
                     <div className="flex gap-6">
                         {/* Filter sidebar - desktop */}
                         <div className="hidden md:block">

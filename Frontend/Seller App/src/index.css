@@ -75,10 +75,10 @@
   }
 
   .dark {
-    --background: 222 47% 4%; /* Near black with blue tint for depth */
+    --background: 222 47% 11%; /* #0f172a - Soft Dark */
     --foreground: 210 40% 98%;
 
-    --card: 222 47% 6%;
+    --card: 215 32% 17%; /* #1e293b - Slightly lighter for cards */
     --card-foreground: 210 40% 98%;
 
     --popover: 222 47% 8%;
@@ -87,10 +87,10 @@
     --primary: 158 94% 46%; /* Brighter, more vibrant primary */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 45 93% 58%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 215 32% 25%;
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 222 30% 12%;
+    --muted: 217 32% 15%;
     --muted-foreground: 215 20% 65%;
 
     --accent: 158 94% 46%;
@@ -99,18 +99,18 @@
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217 32% 14%;
-    --input: 217 32% 14%;
+    --border: 217 32% 22%;
+    --input: 217 32% 22%;
     --ring: 158 94% 46%;
 
-    /* ELITE GLASSMORPHISM DARK - MORE VIBRANT */
-    --glass-bg: rgba(15, 23, 42, 0.7);
-    --glass-blur: blur(24px);
-    --glass-border: 1px solid rgba(255, 255, 255, 0.08);
-    --glass-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+    /* ELITE GLASSMORPHISM DARK - SOFT */
+    --glass-bg: rgba(30, 41, 59, 0.7);
+    --glass-blur: blur(20px);
+    --glass-border: 1px solid rgba(255, 255, 255, 0.05);
+    --glass-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 
-    --shadow-card: 0 10px 40px -6px rgba(0, 0, 0, 0.5);
-    --shadow-elevated: 0 25px 70px -15px rgba(0, 0, 0, 0.7);
+    --shadow-card: 0 10px 40px -6px rgba(0, 0, 0, 0.3);
+    --shadow-elevated: 0 25px 70px -15px rgba(0, 0, 0, 0.4);
   }
 }
 

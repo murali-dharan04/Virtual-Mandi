@@ -31,11 +31,11 @@ function MetricPill({ icon: Icon, label, value, color }) {
   return (
     <motion.div
       whileHover={{ scale: 1.04 }}
-      className="flex flex-col gap-1 items-center bg-white/80 backdrop-blur-sm rounded-2xl p-3 shadow-sm border border-slate-100/60 min-w-[72px]"
+      className="flex flex-col gap-0.5 items-center bg-white/5 backdrop-blur-md rounded-xl p-2.5 border border-white/10 min-w-[64px]"
     >
-      <Icon className={`h-5 w-5 ${color}`} />
-      <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">{label}</p>
-      <p className="text-sm font-black text-slate-800">{value}</p>
+      <Icon className={`h-4 w-4 ${color}`} />
+      <p className="text-[8px] font-black uppercase tracking-widest text-white/40">{label}</p>
+      <p className="text-xs font-black text-white">{value}</p>
     </motion.div>
   );
 }

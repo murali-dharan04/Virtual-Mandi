@@ -56,11 +56,11 @@ const AuthLanding = () => {
                         <Button
                             onClick={() => navigate('/auth/register')}
                             variant="outline"
-                            className="w-full h-18 text-lg font-black uppercase rounded-2xl border-2 border-slate-200 bg-white hover:bg-[#F7F9F5] hover:border-[#A5D6A7] text-slate-700 group transition-all duration-300"
+                            className="w-full h-18 text-lg font-black uppercase rounded-2xl border-2 border-slate-200 bg-white hover:bg-emerald-50/50 hover:border-[#2E7D32] hover:text-[#2E7D32] hover:scale-[1.02] active:scale-[0.98] shadow-sm hover:shadow-xl hover:shadow-emerald-900/10 text-slate-700 group transition-all duration-300 cursor-pointer"
                         >
                             <UserPlus className="mr-3 h-6 w-6 group-hover:scale-110 transition-transform text-[#FF9800]" />
                             Create New Account
-                            <ArrowRight className="ml-auto h-5 w-5 opacity-50" />
+                            <ArrowRight className="ml-auto h-5 w-5 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
                         </Button>
                     </motion.div>
 

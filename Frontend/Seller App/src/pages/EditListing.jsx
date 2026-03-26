@@ -1,40 +1,44 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Save, Trash2, Plus, X, Loader2 } from "lucide-react";
+import { 
+    ArrowLeft, Plus, Loader2, MapPin, 
+    Leaf, TrendingUp, Sparkles, X, Check, Trash2
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { 
+    AlertDialog, AlertDialogAction, AlertDialogCancel, 
+    AlertDialogContent, AlertDialogDescription, 
+    AlertDialogFooter, AlertDialogHeader, AlertDialogTitle 
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { useTranslation } from "react-i18next";
 import { sellerApi } from "@/lib/api";
+import PageTransition from "@/components/PageTransition";
 
 const EditListing = () => {
-    const { t } = useTranslation();
     const { id } = useParams();
     const navigate = useNavigate();
     const { toast } = useToast();
+    
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
-
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [form, setForm] = useState({
         cropName: "",
         category: "Grains",
         quantity: "",
         unit: "kg",
         pricePerUnit: "",
-        qualityGrade: "A",
-        harvestDate: "",
         location: "",
-        imageUrl: "",
+        harvestDate: "",
+        qualityGrade: "Grade A - Premium",
         images: [],
     });
 
     const [isUploadingImage, setIsUploadingImage] = useState(false);
-    const [uploadProgress, setUploadProgress] = useState(0);
-    const [imagePreview, setImagePreview] = useState("");
 
     useEffect(() => {
         const fetchListing = async () => {
@@ -47,19 +51,17 @@ const EditListing = () => {
                         quantity: data.quantity || "",
                         unit: data.unit || "kg",
                         pricePerUnit: data.pricePerUnit || "",
-                        qualityGrade: data.qualityGrade || "A",
-                        harvestDate: data.harvestDate || "",
+                        qualityGrade: data.qualityGrade || "Grade A - Premium",
+                        harvestDate: data.harvestDate ? data.harvestDate.split('T')[0] : "",
                         location: data.location || "",
-                        imageUrl: data.imageUrl || "",
                         images: data.images || [],
                     });
                 } else {
-                    toast({ title: "Error", description: data.error || "Failed to load listing", variant: "destructive" });
+                    toast({ title: "Error", description: "Failed to load listing", variant: "destructive" });
                     navigate("/listings");
                 }
             } catch (err) {
-                console.error("Failed to fetch listing:", err);
-                toast({ title: "Error", description: "Failed to load listing", variant: "destructive" });
+                toast({ title: "Error", description: "Listing not found", variant: "destructive" });
                 navigate("/listings");
             } finally {
                 setIsLoading(false);
@@ -68,400 +70,396 @@ const EditListing = () => {
         fetchListing();
     }, [id, navigate, toast]);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const handleImageChange = async (e) => {
+        const files = Array.from(e.target.files || []);
+        if (!files.length) return;
+        if (form.images.length + files.length > 10) {
+            toast({ title: "Limit Reached", description: "Max 10 photos allowed.", variant: "destructive" });
+            return;
+        }
+
+        setIsUploadingImage(true);
+        for (let i = 0; i < files.length; i++) {
+            try {
+                const res = await sellerApi.uploadImage(files[i]);
+                if (res.success && res.image_url) {
+                    setForm(prev => ({ ...prev, images: [...prev.images, res.image_url] }));
+                } else {
+                    toast({ title: "Upload Failed", description: res.error || "Failed to upload image", variant: "destructive" });
+                }
+            } catch (err) { 
+                console.error(err); 
+                toast({ title: "Upload Error", description: "Network error during upload.", variant: "destructive" });
+            }
+        }
+        setIsUploadingImage(false);
+    };
+
+    const removeImage = (idx) => {
+        setForm(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== idx) }));
+    };
+
+    const handleSubmit = async () => {
+        if (!form.cropName || !form.quantity || !form.pricePerUnit || !form.location) {
+            toast({ title: "Missing Info", description: "Please fill all required fields.", variant: "destructive" });
+            return;
+        }
+
+        const today = new Date().toISOString().split('T')[0];
+        if (form.harvestDate > today) {
+            toast({ title: "Invalid Date", description: "Future harvest date is not allowed", variant: "destructive" });
+            return;
+        }
+
         setIsSaving(true);
         try {
-            const res = await sellerApi.updateListing(id, form);
-            if (res.message) {
-                toast({
-                    title: t("listings.form.edit_title"),
-                    description: "Produce details have been saved successfully.",
-                });
-                navigate("/listings");
-            } else {
-                toast({
-                    title: "Error",
-                    description: res.error || "Failed to update listing",
-                    variant: "destructive",
-                });
-            }
-        } catch (err) {
-            toast({
-                title: "Network Error",
-                description: "Could not reach the server",
-                variant: "destructive",
+            await sellerApi.updateListing(id, {
+                ...form,
+                imageUrl: form.images[0] || "/placeholder.svg"
             });
+            toast({ title: "Changes Saved!", description: "Your listing has been updated." });
+            navigate("/listings");
+        } catch (err) {
+            toast({ title: "Error", description: "Failed to save changes.", variant: "destructive" });
         } finally {
             setIsSaving(false);
         }
     };
 
     const handleDelete = async () => {
-        if (!confirm("Are you sure you want to delete this listing? This action cannot be undone.")) return;
-
         try {
-            const res = await sellerApi.deleteListing(id);
-            if (res.message) {
-                toast({ title: t("listings.delete"), description: "The listing has been removed." });
-                navigate("/listings");
-            } else {
-                toast({ title: "Error", description: res.error || "Failed to delete listing", variant: "destructive" });
-            }
+            await sellerApi.deleteListing(id);
+            toast({ title: "Listing Deleted" });
+            navigate("/listings");
         } catch (err) {
             toast({ title: "Error", description: "Failed to delete listing", variant: "destructive" });
         }
     };
 
-    const handleImageChange = async (e) => {
-        const files = Array.from(e.target.files || []);
-
-        // Check if adding these files would exceed the limit
-        if (form.images.length + files.length > 10) {
-            toast({
-                title: "Upload Limit Exceeded",
-                description: `Maximum 10 photos allowed. You can add ${10 - form.images.length} more photo(s).`,
-                variant: "destructive",
-            });
-            return;
-        }
-
-        for (const file of files) {
-            // Show preview immediately
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setImagePreview(reader.result);
-            };
-            reader.readAsDataURL(file);
-
-            setIsUploadingImage(true);
-            setUploadProgress(0);
-            try {
-                const result = await sellerApi.uploadImage(file, (percent) => {
-                    setUploadProgress(percent);
-                });
-                if (result.success && result.image_url) {
-                    setForm(prev => {
-                        const newImages = [...prev.images, result.image_url];
-                        const newMainImage = prev.imageUrl ? prev.imageUrl : result.image_url;
-                        return { ...prev, images: newImages, imageUrl: newMainImage };
-                    });
-
-                    toast({
-                        title: "Image Uploaded",
-                        description: `Photo uploaded successfully!`,
-                    });
-                } else {
-                    toast({
-                        title: "Upload Failed",
-                        description: result.error || "Could not upload image",
-                        variant: "destructive",
-                    });
-                }
-            } catch (err) {
-                console.error("Upload error:", err);
-                // Auto-retry once after a short delay
-                try {
-                    await new Promise(r => setTimeout(r, 2000));
-                    const retryResult = await sellerApi.uploadImage(file);
-                    if (retryResult.success && retryResult.image_url) {
-                        setForm(prev => {
-                            const newImages = [...prev.images, retryResult.image_url];
-                            const newMainImage = prev.imageUrl ? prev.imageUrl : retryResult.image_url;
-                            return { ...prev, images: newImages, imageUrl: newMainImage };
-                        });
-                        toast({ title: "Image Uploaded", description: "Photo uploaded on retry!" });
-                    } else {
-                        throw new Error(retryResult.error || "Retry failed");
-                    }
-                } catch (retryErr) {
-                    toast({
-                        title: "Upload Error",
-                        description: "Could not upload image. Please check that the backend server is running and try again.",
-                        variant: "destructive",
-                    });
-                }
-            } finally {
-                setIsUploadingImage(false);
-                setUploadProgress(0);
-            }
-        }
-    };
-
-    const removeImage = (index) => {
-        const newImages = form.images.filter((_, i) => i !== index);
-        update("images", newImages);
-
-        // If we removed the primary image, set a new one
-        if (form.imageUrl === form.images[index] && newImages.length > 0) {
-            update("imageUrl", newImages[0]);
-        } else if (newImages.length === 0) {
-            update("imageUrl", "");
-        }
-    };
-
-    const update = (field, value) =>
-        setForm((prev) => ({ ...prev, [field]: value }));
-
     if (isLoading) {
-        return <div className="flex items-center justify-center py-20 font-display text-muted-foreground italic">Loading listing details...</div>;
+        return (
+            <div className="flex flex-col items-center justify-center py-40 gap-4">
+                <Loader2 className="h-10 w-10 animate-spin text-emerald-600" />
+                <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Fetching Details...</p>
+            </div>
+        );
     }
 
     return (
-        <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="max-w-2xl mx-auto space-y-6">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <Button variant="ghost" size="icon" onClick={() => navigate("/listings")}>
-                        <ArrowLeft className="h-5 w-5" />
-                    </Button>
-                    <div>
-                        <h1 className="text-2xl font-bold font-display text-primary">{t("listings.form.edit_title")}</h1>
-                        <p className="text-muted-foreground text-sm mt-0.5">{t("listings.subtitle")}</p>
+        <PageTransition>
+            <div className="max-w-4xl mx-auto pb-24 px-4 bg-[#f8f9fa] min-h-screen pt-4">
+                
+                {/* Header */}
+                <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-4">
+                        <button 
+                            onClick={() => navigate(-1)} 
+                            className="h-10 w-10 bg-white rounded-full flex items-center justify-center shadow-sm border border-slate-100 hover:bg-slate-50 transition-colors shrink-0"
+                        >
+                            <ArrowLeft className="h-5 w-5 text-slate-600" />
+                        </button>
+                        <div>
+                            <h1 className="text-3xl font-serif font-black text-[#1b4332] tracking-tight leading-none">Edit Listing</h1>
+                            <p className="text-xs font-medium text-slate-500 mt-1">Update the details of your crop listing below.</p>
+                        </div>
                     </div>
+                    
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => setShowDeleteDialog(true)} 
+                        className="h-10 w-10 rounded-full text-rose-500 hover:bg-rose-50 hover:text-rose-600 bg-white border border-rose-100 shadow-sm"
+                    >
+                        <Trash2 className="h-5 w-5" />
+                    </Button>
                 </div>
-                <Button variant="destructive" size="sm" onClick={handleDelete} className="shadow-sm">
-                    <Trash2 className="h-4 w-4 mr-2" /> {t("listings.delete")}
-                </Button>
-            </div>
 
-            <Card className="shadow-card overflow-hidden">
-                <div className="h-2 bg-gradient-to-r from-primary/50 to-primary animate-pulse" />
-                <CardHeader>
-                    <CardTitle className="font-display text-lg">{form.cropName || t("listings.form.edit_title")}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        {/* Photo Section */}
-                        <div className="space-y-3">
-                            <Label className="text-base font-bold">{t("listings.form.photo")}</Label>
-                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                                {/* Primary Photo Preview */}
-                                <div className="relative group overflow-hidden rounded-xl border-2 border-dashed border-primary/20 bg-muted/30 aspect-video sm:w-48 flex items-center justify-center transition-all hover:border-primary/50">
-                                    {isUploadingImage ? (
-                                        <div className="flex flex-col items-center gap-3 p-4 w-full">
-                                            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                                            <div className="w-full">
-                                                <div className="flex items-center justify-between mb-1">
-                                                    <span className="text-xs font-semibold text-primary">Uploading...</span>
-                                                    <span className="text-xs font-bold text-primary">{uploadProgress}%</span>
-                                                </div>
-                                                <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                                                    <motion.div
-                                                        className="h-full bg-primary rounded-full"
-                                                        initial={{ width: 0 }}
-                                                        animate={{ width: `${uploadProgress}%` }}
-                                                        transition={{ duration: 0.3 }}
-                                                    />
-                                                </div>
+                {/* Form Card */}
+                <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden relative"
+                >
+                    {/* Top Green Accent Bar */}
+                    <div className="h-4 w-full bg-[#268051]"></div>
+
+                    <div className="p-6 md:p-10 space-y-12">
+                        
+                        {/* 1. PRODUCT PHOTO */}
+                        <div className="space-y-4">
+                            <Label className="uppercase text-[10px] font-black tracking-widest text-slate-500">
+                                Product Photo <span className="text-rose-500">*</span>
+                            </Label>
+                            
+                            <div className="flex flex-col md:flex-row gap-6 items-start">
+                                {/* Upload Box */}
+                                <div className="shrink-0 relative">
+                                    <input 
+                                        type="file" 
+                                        multiple 
+                                        accept="image/*" 
+                                        onChange={handleImageChange} 
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
+                                        disabled={isUploadingImage || form.images.length >= 10}
+                                    />
+                                    <div className={`h-32 w-48 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-colors ${
+                                        form.images.length >= 10 ? 'border-slate-200 bg-slate-50' : 'border-slate-300 hover:border-[#268051] hover:bg-emerald-50/50 cursor-pointer'
+                                    }`}>
+                                        {isUploadingImage ? (
+                                            <div className="flex flex-col items-center gap-2">
+                                                <Loader2 className="h-6 w-6 animate-spin text-[#268051]" />
+                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Scanning...</span>
                                             </div>
-                                        </div>
-                                    ) : form.imageUrl ? (
-                                        <img src={form.imageUrl} alt="Preview" className="h-full w-full object-cover" />
-                                    ) : (
-                                        <div className="flex flex-col items-center gap-2 text-muted-foreground group-hover:text-primary transition-colors">
-                                            <div className="p-3 rounded-full bg-primary/10">
-                                                <Plus className="h-6 w-6" />
-                                            </div>
-                                            <span className="text-xs font-medium">{t("listings.form.photo")}</span>
-                                        </div>
-                                    )}
-                                    {!isUploadingImage && (
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={handleImageChange}
-                                            multiple
-                                            disabled={form.images.length >= 10 || isUploadingImage}
-                                            className="absolute inset-0 opacity-0 cursor-pointer disabled:cursor-not-allowed"
-                                        />
-                                    )}
+                                        ) : (
+                                            <>
+                                                <Plus className="h-8 w-8 text-slate-400 mb-2" strokeWidth={1.5} />
+                                                <span className="text-xs font-bold text-slate-500">Product Photo</span>
+                                            </>
+                                        )}
+                                    </div>
                                 </div>
-                                <div className="flex-1 space-y-1">
-                                    <p className="text-sm font-medium text-foreground">
-                                        {t("listings.form.photo")} {isUploadingImage && <span className="text-primary italic animate-pulse">(Uploading...)</span>}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground leading-relaxed">
-                                        {t("listings.form.upload_tip")} (Max 10 images)
+                                
+                                {/* AI Smart-Scan Details */}
+                                <div className="pt-2">
+                                    <h4 className="text-sm font-black text-slate-800 mb-2 flex items-center gap-2">
+                                        AI Smart-Scan
+                                    </h4>
+                                    <p className="text-xs font-medium text-slate-500 leading-relaxed max-w-sm">
+                                        Upload a clear photo. Our AI will analyze color, texture, and moisture to suggest the optimal Grade and Price.
                                     </p>
                                 </div>
                             </div>
 
-                            {/* Photo Count + Add More Button */}
-                            <div className="flex items-center justify-between bg-muted/50 rounded-lg p-3">
-                                <span className="text-sm font-semibold text-foreground">
-                                    Photos uploaded: <span className="text-primary">{form.images.length}</span>/10
-                                </span>
-                                {form.images.length > 0 && form.images.length < 10 && (
-                                    <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-bold cursor-pointer hover:bg-primary/90 transition-colors shadow-sm">
-                                        <Plus className="h-3.5 w-3.5" />
-                                        Add More Photos
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={handleImageChange}
-                                            multiple
-                                            className="hidden"
-                                            disabled={isUploadingImage}
-                                        />
-                                    </label>
-                                )}
-                                {form.images.length === 0 && form.images.length < 10 && (
-                                    <span className="text-xs text-muted-foreground">
-                                        {10 - form.images.length} more available
-                                    </span>
-                                )}
-                            </div>
-
-                            {/* Photo Gallery */}
+                            {/* Uploaded Images Preview */}
                             {form.images.length > 0 && (
-                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-                                    {form.images.map((image, index) => (
-                                        <motion.div
-                                            key={index}
-                                            layout
-                                            initial={{ opacity: 0, scale: 0.8 }}
-                                            animate={{ opacity: 1, scale: 1 }}
-                                            className={`relative group rounded-lg overflow-hidden border-2 aspect-square cursor-pointer transition-all ${form.imageUrl === image
-                                                ? "border-primary ring-2 ring-primary/20 shadow-md"
-                                                : "border-transparent hover:border-primary/50"
-                                                }`}
-                                            onClick={() => update("imageUrl", image)}
-                                        >
-                                            <img src={image} alt={`Photo ${index + 1}`} className="h-full w-full object-cover" />
-
-                                            {/* Remove Button */}
-                                            <button
-                                                type="button"
-                                                onClick={(e) => { e.stopPropagation(); removeImage(index); }}
-                                                className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500"
-                                            >
-                                                <X className="h-3 w-3" />
-                                            </button>
-
-                                            {/* Primary Indicator */}
-                                            {form.imageUrl === image && (
-                                                <div className="absolute bottom-0 inset-x-0 bg-primary/90 text-primary-foreground text-[10px] font-bold text-center py-1 uppercase tracking-wider backdrop-blur-sm">
-                                                    Main Photo
-                                                </div>
-                                            )}
-                                        </motion.div>
+                                <div className="flex flex-wrap gap-3 mt-4">
+                                    {form.images.map((img, idx) => (
+                                        <div key={idx} className="relative h-16 w-16 rounded-xl overflow-hidden border border-slate-200 group">
+                                            <img src={img} alt={`Preview ${idx + 1}`} className="h-full w-full object-cover" />
+                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                <button onClick={() => removeImage(idx)} className="h-6 w-6 bg-white/20 hover:bg-rose-500 rounded-full flex items-center justify-center backdrop-blur-sm transition-colors">
+                                                    <X className="h-3 w-3 text-white" />
+                                                </button>
+                                            </div>
+                                        </div>
                                     ))}
                                 </div>
                             )}
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="cropName">{t("listings.form.crop_name")}</Label>
-                            <Input
-                                id="cropName"
-                                placeholder="e.g. Basmati Rice"
-                                value={form.cropName}
-                                onChange={(e) => update("cropName", e.target.value)}
-                                required
-                                className="hover:border-primary/50 transition-colors"
-                            />
+
+                            {/* Status Pill */}
+                            <div className="bg-[#f8f9fa] rounded-xl px-5 py-3 flex items-center justify-between mt-2 max-w-2xl">
+                                <span className="text-sm font-black text-slate-700">Photos uploaded: {form.images.length}/10</span>
+                                <span className="text-xs font-semibold text-slate-400">{10 - form.images.length} more available</span>
+                            </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <Label>{t("listings.form.category")}</Label>
-                            <Select value={form.category} onValueChange={(v) => update("category", v)}>
-                                <SelectTrigger className="hover:border-primary/50 transition-colors"><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Grains">Grains</SelectItem>
-                                    <SelectItem value="Vegetables">Vegetables</SelectItem>
-                                    <SelectItem value="Fruits">Fruits</SelectItem>
-                                    <SelectItem value="Other">Other</SelectItem>
-                                </SelectContent>
-                            </Select>
+                        {/* Divider */}
+                        <div className="h-px bg-slate-100 max-w-2xl"></div>
+
+                        {/* 2. CROP INFORMATION */}
+                        <div className="space-y-6 max-w-2xl">
+                            <div className="flex items-center gap-3">
+                                <div className="h-10 w-10 rounded-2xl bg-emerald-50 flex items-center justify-center text-[#268051]">
+                                    <Leaf className="h-5 w-5" />
+                                </div>
+                                <h3 className="text-sm font-serif font-black text-[#1b4332] uppercase tracking-widest">Crop Information</h3>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <Label className="uppercase text-[10px] font-black tracking-widest text-slate-500">
+                                        Crop Name <span className="text-rose-500">*</span>
+                                    </Label>
+                                    <Input 
+                                        placeholder="e.g. Basmati Rice, Tomatoes" 
+                                        value={form.cropName} 
+                                        onChange={e => setForm({...form, cropName: e.target.value})}
+                                        className="h-12 rounded-xl bg-[#f8f9fa] border-slate-200 focus:bg-white focus:border-[#268051] text-sm font-semibold"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="uppercase text-[10px] font-black tracking-widest text-slate-500">
+                                        Category <span className="text-rose-500">*</span>
+                                    </Label>
+                                    <Select value={form.category} onValueChange={v => setForm({...form, category: v})}>
+                                        <SelectTrigger className="h-12 rounded-xl bg-[#f8f9fa] border-slate-200 focus:bg-white focus:border-[#268051] text-sm font-semibold">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-xl">
+                                            <SelectItem value="Vegetables">Vegetables</SelectItem>
+                                            <SelectItem value="Fruits">Fruits</SelectItem>
+                                            <SelectItem value="Grains">Grains</SelectItem>
+                                            <SelectItem value="Spices">Spices</SelectItem>
+                                            <SelectItem value="Other">Other</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
                         </div>
 
-                        <div className="grid gap-4 sm:grid-cols-3">
-                            <div className="space-y-2">
-                                <Label htmlFor="quantity">{t("listings.form.quantity")}</Label>
-                                <Input
-                                    id="quantity"
-                                    type="number"
-                                    value={form.quantity}
-                                    onChange={(e) => update("quantity", e.target.value)}
-                                    required
-                                    min="1"
-                                    className="hover:border-primary/50 transition-colors"
-                                />
+                        {/* Divider */}
+                        <div className="h-px bg-slate-100 max-w-2xl"></div>
+
+                        {/* 3. INVENTORY & PRICING */}
+                        <div className="space-y-6 max-w-2xl">
+                            <div className="flex items-center gap-3">
+                                <div className="h-10 w-10 rounded-2xl bg-orange-50 flex items-center justify-center text-orange-500">
+                                    <TrendingUp className="h-5 w-5" />
+                                </div>
+                                <h3 className="text-sm font-serif font-black text-[#1b4332] uppercase tracking-widest">Inventory & Pricing</h3>
                             </div>
-                            <div className="space-y-2">
-                                <Label>{t("listings.form.unit")}</Label>
-                                <Select value={form.unit} onValueChange={(v) => update("unit", v)}>
-                                    <SelectTrigger className="hover:border-primary/50 transition-colors"><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="kg">Kilograms (kg)</SelectItem>
-                                        <SelectItem value="quintal">Quintal</SelectItem>
-                                    </SelectContent>
-                                </Select>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="space-y-2">
+                                    <Label className="uppercase text-[10px] font-black tracking-widest text-slate-500">
+                                        Quantity <span className="text-rose-500">*</span>
+                                    </Label>
+                                    <Input 
+                                        type="number" 
+                                        placeholder="500" 
+                                        value={form.quantity} 
+                                        onChange={e => setForm({...form, quantity: e.target.value})}
+                                        className="h-12 rounded-xl bg-[#f8f9fa] border-slate-200 focus:bg-white focus:border-[#268051] text-sm font-semibold"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="uppercase text-[10px] font-black tracking-widest text-slate-500">
+                                        Unit (e.g. kg) <span className="text-rose-500">*</span>
+                                    </Label>
+                                    <Select value={form.unit} onValueChange={v => setForm({...form, unit: v})}>
+                                        <SelectTrigger className="h-12 rounded-xl bg-[#f8f9fa] border-slate-200 focus:bg-white focus:border-[#268051] text-sm font-semibold">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-xl">
+                                            <SelectItem value="kg">Kilograms (kg)</SelectItem>
+                                            <SelectItem value="ton">Tons</SelectItem>
+                                            <SelectItem value="quintal">Quintal</SelectItem>
+                                            <SelectItem value="boxes">Boxes</SelectItem>
+                                            <SelectItem value="units">Pieces</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="uppercase text-[10px] font-black tracking-widest text-slate-500">
+                                        Price Per Unit <span className="text-rose-500">*</span>
+                                    </Label>
+                                    <div className="relative">
+                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₹</span>
+                                        <Input 
+                                            type="number" 
+                                            placeholder="65" 
+                                            value={form.pricePerUnit} 
+                                            onChange={e => setForm({...form, pricePerUnit: e.target.value})}
+                                            className="h-12 pl-8 rounded-xl bg-[#f8f9fa] border-slate-200 focus:bg-white focus:border-[#268051] text-sm font-semibold"
+                                        />
+                                    </div>
+                                </div>
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="price">{t("listings.form.price_per_unit")}</Label>
+                        </div>
+
+                        {/* Divider */}
+                        <div className="h-px bg-slate-100 max-w-2xl"></div>
+
+                        {/* 4. QUALITY & ORIGIN */}
+                        <div className="space-y-6 max-w-2xl">
+                            <div className="flex items-center gap-3">
+                                <div className="h-10 w-10 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-500">
+                                    <Sparkles className="h-5 w-5" />
+                                </div>
+                                <h3 className="text-sm font-serif font-black text-[#1b4332] uppercase tracking-widest">Quality & Origin</h3>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <Label className="uppercase text-[10px] font-black tracking-widest text-slate-500">
+                                        Quality Grade <span className="text-rose-500">*</span>
+                                    </Label>
+                                    <Select value={form.qualityGrade} onValueChange={v => setForm({...form, qualityGrade: v})}>
+                                        <SelectTrigger className="h-12 rounded-xl bg-[#f8f9fa] border-slate-200 focus:bg-white focus:border-[#268051] text-sm font-semibold">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-xl">
+                                            <SelectItem value="Grade A - Premium">Grade A – Premium</SelectItem>
+                                            <SelectItem value="Grade B - Standard">Grade B – Standard</SelectItem>
+                                            <SelectItem value="Grade C - Processing">Grade C – Processing</SelectItem>
+                                            <SelectItem value="Organic">Organic Certified</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="uppercase text-[10px] font-black tracking-widest text-slate-500">
+                                        Harvest Date <span className="text-rose-500">*</span>
+                                    </Label>
+                                    <Input 
+                                        type="date" 
+                                        max={new Date().toISOString().split('T')[0]}
+                                        value={form.harvestDate} 
+                                        onChange={e => setForm({...form, harvestDate: e.target.value})}
+                                        className="h-12 rounded-xl bg-[#f8f9fa] border-slate-200 focus:bg-white focus:border-[#268051] text-sm font-semibold"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2 pt-2">
+                                <Label className="uppercase text-[10px] font-black tracking-widest text-slate-500">
+                                    Location <span className="text-rose-500">*</span>
+                                </Label>
                                 <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">₹</span>
-                                    <Input
-                                        id="price"
-                                        type="number"
-                                        value={form.pricePerUnit}
-                                        onChange={(e) => update("pricePerUnit", e.target.value)}
-                                        required
-                                        min="1"
-                                        className="pl-7 hover:border-primary/50 transition-colors"
+                                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                                    <Input 
+                                        placeholder="e.g. Karnal, Haryana" 
+                                        value={form.location} 
+                                        onChange={e => setForm({...form, location: e.target.value})}
+                                        className="h-12 pl-12 rounded-xl bg-[#f8f9fa] border-slate-200 focus:bg-white focus:border-[#268051] text-sm font-semibold"
                                     />
                                 </div>
                             </div>
                         </div>
 
-                        <div className="grid gap-4 sm:grid-cols-2">
-                            <div className="space-y-2">
-                                <Label>{t("listings.form.quality")}</Label>
-                                <Select value={form.qualityGrade} onValueChange={(v) => update("qualityGrade", v)}>
-                                    <SelectTrigger className="hover:border-primary/50 transition-colors"><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="A">Grade A – Premium</SelectItem>
-                                        <SelectItem value="B">Grade B – Standard</SelectItem>
-                                        <SelectItem value="C">Grade C – Economy</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="harvestDate">Harvest Date</Label>
-                                <Input
-                                    id="harvestDate"
-                                    type="date"
-                                    value={form.harvestDate}
-                                    onChange={(e) => update("harvestDate", e.target.value)}
-                                    required
-                                    className="hover:border-primary/50 transition-colors"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="location">{t("listings.location")}</Label>
-                            <Input
-                                id="location"
-                                value={form.location}
-                                onChange={(e) => update("location", e.target.value)}
-                                required
-                                className="hover:border-primary/50 transition-colors"
-                            />
-                        </div>
-
-                        <div className="flex gap-3 pt-4">
-                            <Button type="submit" className="gradient-hero flex-1 h-12 text-base font-bold text-primary-foreground shadow-card hover:scale-[1.01] transform transition-all active:scale-95" disabled={isSaving}>
-                                <Save className="mr-2 h-4 w-4" /> {isSaving ? "Saving..." : t("listings.form.submit")}
+                        {/* Bottom Actions */}
+                        <div className="flex items-center gap-4 pt-4 max-w-2xl">
+                            <Button 
+                                onClick={handleSubmit} 
+                                disabled={isSaving}
+                                className="flex-1 h-14 bg-[#268051] hover:bg-[#1b5e3a] text-white rounded-2xl text-sm font-black uppercase tracking-widest shadow-lg shadow-emerald-500/20"
+                            >
+                                {isSaving ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <Check className="h-5 w-5 mr-2" />}
+                                Save Changes
                             </Button>
-                            <Button type="button" variant="outline" onClick={() => navigate("/listings")} className="h-12 px-8">
-                                {t("listings.form.cancel")}
+                            <Button 
+                                onClick={() => navigate(-1)}
+                                variant="outline"
+                                className="px-8 h-14 bg-[#f8f9fa] hover:bg-slate-100 border-slate-200 text-slate-600 rounded-2xl text-sm font-bold shadow-sm"
+                            >
+                                Cancel
                             </Button>
                         </div>
-                    </form>
-                </CardContent>
-            </Card>
-        </motion.div>
+
+                    </div>
+                </motion.div>
+
+                <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                    <AlertDialogContent className="rounded-3xl border-slate-100 p-6">
+                        <AlertDialogHeader>
+                            <div className="h-12 w-12 rounded-full bg-rose-50 flex items-center justify-center mb-4 mx-auto">
+                                <Trash2 className="h-6 w-6 text-rose-500" />
+                            </div>
+                            <AlertDialogTitle className="text-center font-serif text-2xl font-black">Delete Listing?</AlertDialogTitle>
+                            <AlertDialogDescription className="text-center text-slate-500 font-medium pb-4">
+                                This action cannot be undone. This will permanently remove your crop listing from the marketplace.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter className="flex-col sm:flex-row gap-2 mt-2">
+                            <AlertDialogCancel className="h-12 rounded-xl border-slate-200 text-slate-600 font-bold uppercase tracking-widest text-[10px]">Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleDelete} className="h-12 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold uppercase tracking-widest text-[10px]">
+                                Yes, delete listing
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+
+            </div>
+        </PageTransition>
     );
 };
 

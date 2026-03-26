@@ -176,8 +176,8 @@ const Orders = () => {
     // List view
     return (
         <div className="min-h-screen bg-background">
-            <div className="container py-6">
-                <h1 className="mb-6 text-2xl font-extrabold text-foreground">{t("orders.title")}</h1>
+            <div className="container py-4">
+                <h1 className="mb-4 text-xl font-black text-foreground tracking-tight italic uppercase">{t("orders.title")}</h1>
                 {isLoading ? (
                     <div className="flex flex-col items-center py-20">
                         <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />

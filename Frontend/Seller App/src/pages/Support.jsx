@@ -28,129 +28,90 @@ const Support = () => {
     };
 
     return (
-        <div className="space-y-6 max-w-4xl mx-auto">
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-center space-y-2 mb-8"
-            >
-                <h1 className="text-3xl font-extrabold tracking-tight">Help & Support</h1>
-                <p className="text-muted-foreground">We are here to help you grow your business.</p>
-            </motion.div>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-10 max-w-5xl mx-auto pb-24 px-4 pt-4">
+            <div className="text-center space-y-3 mb-12">
+                <h1 className="text-4xl font-black tracking-tight text-slate-900 dark:text-white uppercase italic leading-none">Support Center</h1>
+                <p className="text-slate-500 font-bold text-lg">We're here to help you grow and succeed.</p>
+            </div>
 
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-8 md:grid-cols-2">
                 {/* Contact Options */}
-                <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.1 }}
-                >
-                    <Card className="h-full shadow-card border-0 bg-gradient-to-br from-white to-secondary/20">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Headset className="h-6 w-6 text-primary" />
+                <div className="space-y-6">
+                    <Card className="border-none shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] dark:shadow-none bg-white dark:bg-slate-900 rounded-[2.5rem] overflow-hidden">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-xl font-black uppercase italic flex items-center gap-3">
+                                <div className="p-2.5 rounded-2xl bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600">
+                                    <Headset className="h-6 w-6" />
+                                </div>
                                 Get in Touch
                             </CardTitle>
-                            <CardDescription>
-                                Choose a channel to reach our support team.
-                            </CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-6">
-
-                            {/* Phone */}
-                            <div className="flex items-center gap-4 p-4 rounded-2xl bg-white shadow-sm border border-border/40 hover:shadow-md transition-all">
-                                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                                    <Phone className="h-5 w-5" />
-                                </div>
-                                <div className="flex-1">
-                                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Call Us</p>
-                                    <p className="text-lg font-black text-foreground">+91 98765 43210</p>
-                                    <p className="text-[10px] text-muted-foreground font-medium">Mon-Sat • 9 AM - 6 PM</p>
-                                </div>
-                                <Button size="sm" variant="secondary" className="font-bold">Call</Button>
-                            </div>
-
-                            {/* Email */}
-                            <div className="flex items-center gap-4 p-4 rounded-2xl bg-white shadow-sm border border-border/40 hover:shadow-md transition-all">
-                                <div className="h-12 w-12 rounded-full bg-accent/10 flex items-center justify-center text-accent">
-                                    <Mail className="h-5 w-5" />
-                                </div>
-                                <div className="flex-1">
-                                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Email Us</p>
-                                    <p className="text-lg font-black text-foreground">support@virtualmandi.com</p>
-                                    <p className="text-[10px] text-muted-foreground font-medium">Response within 24h</p>
-                                </div>
-                                <Button size="sm" variant="outline" className="font-bold">Email</Button>
-                            </div>
-
-                            {/* WhatsApp */}
-                            <div className="flex items-center gap-4 p-4 rounded-2xl bg-[#25D366]/10 shadow-sm border border-[#25D366]/20 hover:shadow-md transition-all">
-                                <div className="h-12 w-12 rounded-full bg-[#25D366] flex items-center justify-center text-white">
-                                    <MessageSquare className="h-5 w-5" />
-                                </div>
-                                <div className="flex-1">
-                                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">WhatsApp</p>
-                                    <p className="text-lg font-black text-foreground">Chat Support</p>
-                                    <p className="text-[10px] text-muted-foreground font-medium">Instant replies</p>
-                                </div>
-                                <Button size="sm" className="bg-[#25D366] hover:bg-[#128C7E] text-white font-bold border-0">Chat</Button>
-                            </div>
-
+                        <CardContent className="p-6 space-y-4">
+                            {[
+                                { icon: Phone, label: "Call Us", val: "+91 98765 43210", sub: "Mon-Sat • 9 AM - 6 PM", color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-500/10", action: "Call" },
+                                { icon: Mail, label: "Email Us", val: "support@virtualmandi.com", sub: "Response within 24h", color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-500/10", action: "Email" },
+                                { icon: MessageSquare, label: "WhatsApp", val: "Instant Chat", sub: "Available 24/7", color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-500/10", action: "Chat" }
+                            ].map((item, i) => (
+                                <motion.div key={i} whileHover={{ x: 8 }} className="group flex items-center gap-5 p-5 rounded-[2rem] border-2 border-slate-50 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/50 cursor-pointer transition-all hover:border-emerald-500/30 hover:bg-white dark:hover:bg-slate-800 shadow-sm">
+                                    <div className={`h-14 w-14 rounded-2xl ${item.bg} flex items-center justify-center ${item.color} shrink-0 shadow-inner group-hover:scale-110 transition-transform`}>
+                                        <item.icon className="h-6 w-6" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5">{item.label}</p>
+                                        <p className="text-lg font-black text-slate-900 dark:text-white leading-none mb-1">{item.val}</p>
+                                        <p className="text-[11px] text-slate-500 font-bold">{item.sub}</p>
+                                    </div>
+                                    <Button variant="ghost" className="rounded-xl font-black text-xs uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
+                                        {item.action}
+                                    </Button>
+                                </motion.div>
+                            ))}
                         </CardContent>
                     </Card>
-                </motion.div>
+                </div>
 
                 {/* Contact Form */}
-                <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.2 }}
-                >
-                    <Card className="shadow-card border-0 h-full">
-                        <CardHeader>
-                            <CardTitle>Send us a message</CardTitle>
-                            <CardDescription>
-                                Fill out the form below and we'll respond as soon as possible.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <form onSubmit={handleSubmit} className="space-y-4">
-                                <div className="space-y-2">
-                                    <label className="text-sm font-bold ml-1">Issue Type</label>
-                                    <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-                                        <option>Select an issue...</option>
-                                        <option>Payment Issue</option>
-                                        <option>Product Listing</option>
-                                        <option>Order Dispute</option>
-                                        <option>Account Help</option>
-                                        <option>Other</option>
-                                    </select>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-bold ml-1">Subject</label>
-                                    <Input placeholder="Brief summary of issue" required />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-bold ml-1">Message</label>
-                                    <Textarea
-                                        placeholder="Describe your issue in detail..."
-                                        className="min-h-[150px]"
-                                        required
-                                    />
-                                </div>
-                                <Button type="submit" className="w-full font-bold" disabled={isSubmitting}>
-                                    {isSubmitting ? "Sending..." : (
-                                        <>
-                                            Submit Ticket <Send className="ml-2 h-4 w-4" />
-                                        </>
-                                    )}
-                                </Button>
-                            </form>
-                        </CardContent>
-                    </Card>
-                </motion.div>
+                <Card className="border-none shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] dark:shadow-none bg-white dark:bg-slate-900 rounded-[2.5rem] overflow-hidden">
+                    <CardHeader>
+                        <CardTitle className="text-xl font-black uppercase italic">Submit a Ticket</CardTitle>
+                        <p className="text-slate-500 text-sm font-bold">Describe your issue and we'll get back to you soon.</p>
+                    </CardHeader>
+                    <CardContent>
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Issue Type</label>
+                                <select className="flex h-14 w-full rounded-2xl border-2 border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 px-4 font-bold text-sm focus:border-emerald-500 outline-none transition-all cursor-pointer appearance-none">
+                                    <option>Payment Issue</option>
+                                    <option>Product Listing</option>
+                                    <option>Order Dispute</option>
+                                    <option>Account Help</option>
+                                    <option>Other</option>
+                                </select>
+                            </div>
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Subject</label>
+                                <Input className="h-14 rounded-2xl border-2 border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 px-4 font-bold focus:border-emerald-500" placeholder="e.g. Can't see my listing" required />
+                            </div>
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Detail Message</label>
+                                <Textarea
+                                    placeholder="Explain your problem in detail..."
+                                    className="min-h-[160px] rounded-2xl border-2 border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 px-4 py-4 font-bold focus:border-emerald-500"
+                                    required
+                                />
+                            </div>
+                            <Button type="submit" className="w-full h-16 rounded-2xl font-black uppercase tracking-widest bg-emerald-600 hover:bg-emerald-500 shadow-xl shadow-emerald-600/20 active:scale-[0.98] transition-all" disabled={isSubmitting}>
+                                {isSubmitting ? <RefreshCw className="h-5 w-5 animate-spin" /> : (
+                                    <>
+                                        Submit Ticket <Send className="ml-3 h-5 w-5" />
+                                    </>
+                                )}
+                            </Button>
+                        </form>
+                    </CardContent>
+                </Card>
             </div>
-        </div>
+        </motion.div>
     );
 };
 

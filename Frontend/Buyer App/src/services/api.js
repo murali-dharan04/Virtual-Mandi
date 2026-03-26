@@ -1,4 +1,4 @@
-export const BASE_URL = "https://virtual-mandi.onrender.com";
+export const BASE_URL = "http://localhost:5000";
 
 const getToken = () => localStorage.getItem("buyerToken");
 
@@ -62,8 +62,17 @@ export const api = {
         if (!res.ok) return [];
         return await res.json();
     },
+    getTransactions: async () => {
+        const res = await fetch(`${BASE_URL}/api/transactions`, { headers: headers() });
+        if (!res.ok) return [];
+        return await res.json();
+    },
     markNotificationsAsRead: async () => {
         const res = await fetch(`${BASE_URL}/api/notifications/read`, { method: "PUT", headers: headers() });
+        return await res.json();
+    },
+    deleteNotification: async (notifId) => {
+        const res = await fetch(`${BASE_URL}/api/notifications/${notifId}`, { method: "DELETE", headers: headers() });
         return await res.json();
     },
     search: async (itemName = "") => {
@@ -188,6 +197,11 @@ export const api = {
     },
     getListingById: async (id) => {
         const res = await fetch(`${BASE_URL}/api/listing/${id}`, { headers: headers() });
+        return await res.json();
+    },
+    getDistricts: async () => {
+        const res = await fetch(`${BASE_URL}/api/districts`);
+        if (!res.ok) return ["Nashik", "Pune", "Nagpur", "Ludhiana"];
         return await res.json();
     },
     getDemandHeatmap: async () => {

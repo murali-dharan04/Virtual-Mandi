@@ -8,3 +8,4 @@ requests
 cloudinary
 pymongo
 gunicorn
+flask-socketio

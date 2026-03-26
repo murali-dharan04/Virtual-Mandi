@@ -4,6 +4,7 @@ from flask_jwt_extended import (
     JWTManager, create_access_token, jwt_required, get_jwt_identity
 )
 from flask_cors import CORS, cross_origin
+from flask_socketio import SocketIO
 from dotenv import load_dotenv
 import os
 import bcrypt
@@ -26,6 +27,7 @@ os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = r"d:\Virtual-Mandi-main\silver-ta
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})  # More robust CORS for local dev
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 
 # -------------------- CONFIG --------------------
 app.config["MONGO_URI"] = os.getenv("MONGO_URI")
@@ -163,10 +165,21 @@ def register():
             mongo.db.BuyerProfiles.insert_one({"user_id": user_id, "location": location})
 
         mongo.db.Wallet.insert_one({"user_id": user_id, "balance": 0})
+        access_token = create_access_token(identity=str(user_id))
+        user_data = {
+            "id": str(user_id),
+            "name": name,
+            "email": email,
+            "role": role,
+            "location": location
+        }
+
         log_to_file(f"User {email} registered successfully with ID {user_id}")
         return jsonify({
             "message": "User registered successfully!",
-            "user_id": str(user_id)
+            "user_id": str(user_id),
+            "access_token": access_token,
+            "user": user_data
         }), 201
     except Exception as e:
         import traceback
@@ -483,6 +496,20 @@ def add_listing():
             notif["user_id"] = buyer_user["_id"]
             mongo.db.Notifications.insert_one(notif)
 
+        # Emit real-time event to all connected clients
+        socketio.emit("listing_created", {
+            "id": str(listing_id),
+            "cropName": crop_name,
+            "category": category,
+            "quantity": int(quantity),
+            "pricePerUnit": float(price_per_unit),
+            "location": location,
+            "qualityGrade": quality_grade,
+            "unit": unit,
+            "imageUrl": image_url,
+            "farmerName": user.get("name", "Local Farmer"),
+        })
+
         return jsonify({"message": "Listing added successfully!", "listing_id": str(listing_id)}), 201
     except Exception as e:
         import traceback
@@ -550,10 +577,30 @@ def get_public_listing_by_id(id):
         "unit": listing.get("unit", "kg"),
         "imageUrl": listing.get("image_url"),
         "images": listing.get("images", []),
+        "views": listing.get("views", 0),
         "farmerName": mongo.db.Users.find_one({"_id": listing["seller_id"]}).get("name", "Local Farmer") if "seller_id" in listing else "Local Farmer",
         "farmerPhone": mongo.db.Users.find_one({"_id": listing["seller_id"]}).get("phone", "") if "seller_id" in listing else "",
         "whatsappNumber": mongo.db.Users.find_one({"_id": listing["seller_id"]}).get("whatsapp_number", "") if "seller_id" in listing else ""
     }), 200
+
+@app.route("/api/listing/<id>/view", methods=["POST"])
+def increment_listing_view(id):
+    """Increments the view count for a listing."""
+    try:
+        mongo.db.Listings.update_one(
+            {"_id": ObjectId(id)},
+            {"$inc": {"views": 1}}
+        )
+        # Emit a real-time update so all buyers see the new view count
+        listing = mongo.db.Listings.find_one({"_id": ObjectId(id)})
+        if listing:
+            socketio.emit("listing_viewed", {
+                "id": id,
+                "views": listing.get("views", 0)
+            })
+        return jsonify({"success": True}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/seller/profile/update", methods=["PUT"])
 @jwt_required()
@@ -608,6 +655,20 @@ def update_listing(id):
     }
     
     mongo.db.Listings.update_one({"_id": ObjectId(id)}, {"$set": update_data})
+
+    socketio.emit("listing_updated", {
+        "id": id,
+        "cropName": update_data["name"],
+        "category": update_data.get("category"),
+        "quantity": update_data["quantity"],
+        "pricePerUnit": update_data["price_per_unit"],
+        "location": update_data["location"],
+        "qualityGrade": update_data.get("quality_grade"),
+        "unit": update_data.get("unit", "kg"),
+        "imageUrl": update_data.get("image_url"),
+        "views": existing.get("views", 0)
+    })
+
     return jsonify({"message": "Listing updated successfully"}), 200
 
 @app.route("/seller/listing/<id>", methods=["DELETE"])
@@ -626,7 +687,10 @@ def delete_listing(id):
         {"user_id": ObjectId(user_id)},
         {"$pull": {"listings": ObjectId(id)}}
     )
-        
+
+    # Emit real-time event
+    socketio.emit("listing_deleted", {"id": id})
+
     return jsonify({"message": "Listing deleted successfully"}), 200
 
 @app.route("/seller/orders", methods=["GET"])
@@ -700,9 +764,25 @@ def update_order_status(id):
                 "created_at": datetime.utcnow()
             })
             
+            # Emit real-time notification to buyer
+            socketio.emit("order_status_updated", {
+                "order_id": str(id),
+                "status": "accepted",
+                "buyer_id": str(order["buyer_id"]),
+                "crop_name": order["crop_name"]
+            }, room=str(order["buyer_id"]))
+
     if status.lower() == "rejected":
         order = mongo.db.Orders.find_one({"_id": ObjectId(id)})
         if order:
+            # Inventory Tracking: Restore Stock on Reject
+            log_to_file(f"Restoring {int(order.get('quantity', 0))} for listing {str(order.get('listing_id'))}")
+            res = mongo.db.Listings.update_one(
+                {"_id": ObjectId(str(order["listing_id"]))},
+                {"$inc": {"quantity": int(order.get("quantity", 0))}}
+            )
+            log_to_file(f"Restore result matched: {res.matched_count} modified: {res.modified_count}")
+            
             mongo.db.Notifications.insert_one({
                 "user_id": order["buyer_id"],
                 "type": "order_rejected",
@@ -711,6 +791,14 @@ def update_order_status(id):
                 "read": False,
                 "created_at": datetime.utcnow()
             })
+            
+            # Emit real-time notification to buyer
+            socketio.emit("order_status_updated", {
+                "order_id": str(id),
+                "status": "rejected",
+                "buyer_id": str(order["buyer_id"]),
+                "crop_name": order["crop_name"]
+            }, room=str(order["buyer_id"]))
         
     return jsonify({"message": f"Order {id} updated to {status}"}), 200
 
@@ -766,6 +854,24 @@ def get_buyer_orders():
             "placedAt": o["created_at"]
         })
     return jsonify(orders), 200
+
+@app.route("/api/transactions", methods=["GET"])
+@jwt_required()
+def get_buyer_transactions():
+    user_id = get_jwt_identity()
+    transactions = []
+    # Fetch orders for this buyer to serve as transactions
+    for o in mongo.db.Orders.find({"buyer_id": ObjectId(user_id)}).sort("created_at", -1):
+        transactions.append({
+            "id": str(o["_id"]),
+            "order_id": o.get("order_id_str"),
+            "amount": o["total_price"],
+            "status": o["status"],
+            "date": o["created_at"],
+            "description": f"Payment for {o['quantity']} {o.get('unit', 'kg')} of {o['crop_name']}",
+            "type": "debit"
+        })
+    return jsonify(transactions), 200
 
 # -------------------- BUYER ONDC MOCK ROUTES --------------------
 @app.route("/bpp/search", methods=["POST"])
@@ -1185,19 +1291,39 @@ def get_weather_alerts():
         return jsonify({"alerts": response.json["alerts"]}), 200
     return response, status_code
 
+@app.route("/api/districts", methods=["GET"])
+def get_districts():
+    """Returns a list of unique districts/locations from available listings."""
+    try:
+        # Get distinct locations from Listings
+        districts = mongo.db.Listings.distinct("location")
+        # Also include districts from Users if they are farmers
+        user_districts = mongo.db.Users.distinct("district", {"role": "farmer"})
+        
+        # Combine and clean
+        all_districts = list(set([d for d in districts + user_districts if d]))
+        all_districts.sort()
+        
+        return jsonify(all_districts), 200
+    except Exception as e:
+        log_to_file(f"Error fetching districts: {str(e)}")
+        return jsonify(["Nashik", "Pune", "Nagpur", "Ludhiana", "Karnal", "Jaipur"]), 200 # Static fallback
+
 @app.route("/api/notifications", methods=["GET"])
 @jwt_required()
 def get_notifications():
     user_id = get_jwt_identity()
     notifications = []
-    # Fetch 10 most recent unread notifications, or all unread
-    query = {"user_id": ObjectId(user_id), "read": False}
+    # Fetch 20 most recent notifications (both read and unread)
+    # This ensures they remain visible "after reading" as requested
+    query = {"user_id": ObjectId(user_id)}
     for n in mongo.db.Notifications.find(query).sort("created_at", -1).limit(20):
         notifications.append({
             "id": str(n["_id"]),
             "type": n["type"],
             "title": n["title"],
             "message": n["message"],
+            "read": n.get("read", False),
             "created_at": n["created_at"].isoformat() if isinstance(n["created_at"], datetime) else n["created_at"]
         })
     return jsonify(notifications), 200
@@ -1211,6 +1337,15 @@ def mark_notifications_read():
         {"$set": {"read": True}}
     )
     return jsonify({"message": "Notifications marked as read"}), 200
+
+@app.route("/api/notifications/<notif_id>", methods=["DELETE"])
+@jwt_required()
+def delete_notification(notif_id):
+    user_id = get_jwt_identity()
+    result = mongo.db.Notifications.delete_one({"_id": ObjectId(notif_id), "user_id": ObjectId(user_id)})
+    if result.deleted_count == 0:
+        return jsonify({"error": "Notification not found"}), 404
+    return jsonify({"message": "Notification deleted"}), 200
 
 @app.route("/ondc/responses/<transaction_id>", methods=["GET"])
 def get_ondc_responses(transaction_id):
@@ -1285,6 +1420,12 @@ def bpp_confirm():
 
     inserted_id = mongo.db.Orders.insert_one(order).inserted_id
 
+    # Inventory Tracking: Reserve stock instantly on placement
+    mongo.db.Listings.update_one(
+        {"_id": ObjectId(item_id)},
+        {"$inc": {"quantity": -int(order["quantity"])}}
+    )
+
     # Trigger notification for seller (New Order Received)
     mongo.db.Notifications.insert_one({
         "user_id": listing["seller_id"],
@@ -1295,11 +1436,15 @@ def bpp_confirm():
         "created_at": datetime.utcnow()
     })
 
-    # Inventory Tracking: Decrement Stock
-    mongo.db.Listings.update_one(
-        {"_id": ObjectId(item_id)},
-        {"$inc": {"quantity": -int(item.get("quantity", {}).get("count", 1))}}
-    )
+    # Emit real-time notification to seller
+    socketio.emit("new_order", {
+        "order_id": str(inserted_id),
+        "crop_name": listing["name"],
+        "quantity": item.get("quantity", {}).get("count", 1),
+        "total_price": order["total_price"],
+        "buyer_name": buyer_name,
+        "seller_id": str(listing["seller_id"])
+    })
 
     ondc_responses[transaction_id] = [
         {
@@ -1433,48 +1578,7 @@ def analyze_food_image(image_path_or_url, filename_for_fallback=""):
 
     return detected_item, category, round(confidence, 1), ai_method, quality_info
 
-@app.route("/api/analyze-image", methods=["POST"])
-@jwt_required()
-def analyze_image_ai():
-    """
-    Detects product, auto-categorises, and suggests price.
-    Uses Hugging Face ViT if HF_API_TOKEN is set, else Enhanced Simulation.
-    """
-    data = request.get_json()
-    image_url = data.get("image_url")
-    original_filename = data.get("original_filename", "")
 
-    if not image_url:
-        return jsonify({"error": "Image URL required"}), 400
-
-    try:
-        detected_item, category, confidence, ai_method, quality_info = analyze_food_image(image_url, original_filename)
-
-        # Market price lookup
-        market_price = 20
-        commodity = (detected_item or "").lower()
-        for k, v in MARKET_PRICES.items():
-            if k in commodity:
-                market_price = v
-                break
-
-        suggested_price = round(market_price * 1.05, 2)
-
-        return jsonify({
-            "detected_item": detected_item,
-            "category": category,
-            "confidence": confidence,
-            "market_price": market_price,
-            "suggested_price": suggested_price,
-            "unit": "quintal" if category == "Grains" else "kg",
-            "ai_method": ai_method,
-            "quality_info": quality_info
-        }), 200
-
-    except Exception as e:
-        import traceback
-        log_to_file(f"analyze-image ERROR: {str(e)}\n{traceback.format_exc()}")
-        return jsonify({"error": f"Analysis failed: {str(e)}"}), 500
 
 # -------------------- STANDALONE APP ENDPOINT (UNIFIED) --------------------
 import werkzeug.utils
@@ -1790,6 +1894,84 @@ def get_orders_by_day():
         return jsonify({"error": "Failed to fetch daily orders"}), 500
 
 
+@app.route("/seller/revenue-chart", methods=["GET"])
+@jwt_required()
+def get_seller_revenue_chart():
+    """Get revenue for the last 7 days for the logged-in seller"""
+    try:
+        from datetime import date, timedelta as td
+        seller_id = get_jwt_identity()
+        
+        today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        result = []
+
+        for i in range(6, -1, -1):
+            day_start = today - td(days=i)
+            day_end   = day_start + td(days=1)
+            
+            orders = list(mongo.db.Orders.find({
+                "seller_id": seller_id,
+                "created_at": {"$gte": day_start, "$lt": day_end}
+            }))
+            
+            revenue = sum(o.get("total_price", 0) for o in orders)
+            
+            result.append({
+                "day": day_start.strftime("%a"),
+                "sales": revenue
+            })
+
+        return jsonify(result), 200
+    except Exception as e:
+        log_to_file(f"Seller revenue chart error: {str(e)}")
+        return jsonify({"error": "Failed to fetch revenue data"}), 500
+
+
+@app.route("/api/transactions", methods=["GET"])
+@jwt_required()
+def get_transactions():
+    """Get unified transaction history (completed/paid orders)"""
+    try:
+        user_id = get_jwt_identity()
+        user = mongo.db.Users.find_one({"_id": ObjectId(user_id)})
+        
+        if not user:
+            # Fallback if user object is missing but ID exists in JWT
+            role = "farmer" # Default or logic based on JWT claims if available
+        else:
+            role = user.get("role")
+
+        query = {}
+        if role == "farmer":
+            query["seller_id"] = user_id
+        else:
+            query["buyer_id"] = user_id
+            
+        # For simplicity, we return all orders as "transactions"
+        # In a real app, this might only be "completed" or "accepted" ones
+        orders = list(mongo.db.Orders.find(query).sort("created_at", -1))
+        
+        result = []
+        for o in orders:
+            result.append({
+                "id": str(o.get("_id")),
+                "cropName": o.get("crop_name"),
+                "quantity": o.get("quantity"),
+                "unit": o.get("unit", "kg"),
+                "totalPrice": o.get("total_price", 0),
+                "paymentStatus": o.get("payment_status", "paid"),
+                "status": o.get("status", "Pending"),
+                "placedAt": o.get("created_at").isoformat() if isinstance(o.get("created_at"), datetime) else o.get("created_at")
+            })
+
+        return jsonify(result), 200
+    except Exception as e:
+        log_to_file(f"Transactions error: {str(e)}")
+        return jsonify({"error": "Failed to fetch transactions"}), 500
+
+
 # -------------------- RUN APP --------------------
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    socketio.run(app, host="0.0.0.0", port=5000, debug=True, allow_unsafe_werkzeug=True)
+
+# Force Flask Reload to apply latest inventory logic fixes
