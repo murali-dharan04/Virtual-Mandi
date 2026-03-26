@@ -1,26 +1,58 @@
-export const BASE_URL = "http://localhost:5000";
+export const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const getToken = () => localStorage.getItem("sellerToken");
 
 /**
  * Common headers for authenticated requests
  */
-const headers = () => ({
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${getToken()}`,
-});
+const getHeaders = (isMultipart = false) => {
+    const h = isMultipart ? {} : { "Content-Type": "application/json" };
+    const token = getToken();
+    if (token) {
+        h["Authorization"] = `Bearer ${token}`;
+    }
+    return h;
+};
+
+/**
+ * Robust request helper with descriptive error handling
+ */
+const request = async (endpoint, options = {}) => {
+    const url = `${BASE_URL}${endpoint}`;
+    console.log(`DEBUG: API Request to ${url}`, options.body ? JSON.parse(options.body) : "");
+    
+    try {
+        const response = await fetch(url, {
+            ...options,
+            headers: {
+                ...getHeaders(options.body instanceof FormData),
+                ...options.headers
+            }
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            const errorMsg = data.error || data.message || `API Error (${response.status})`;
+            if (response.status === 401) return { ...data, error: "Invalid credentials or session expired" };
+            if (response.status === 404) return { ...data, error: "Requested resource not found" };
+            return { ...data, error: errorMsg };
+        }
+
+        return data;
+    } catch (error) {
+        console.error("DEBUG: API Connection Error", error);
+        return { error: "Server not reachable. Please check your internet or try again later." };
+    }
+};
 
 export const sellerApi = {
     // Authenticate a farmer and store the token
     login: async (email, password) => {
-        console.log("DEBUG: Seller Login Attempt", { email });
-        const res = await fetch(`${BASE_URL}/login`, {
+        const data = await request("/api/auth/login", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email, password, role: "farmer" }),
         });
-        const data = await res.json();
-        console.log("DEBUG: Seller Login Response", data);
         if (data.access_token) {
             localStorage.setItem("sellerToken", data.access_token);
             if (data.user) {
@@ -29,17 +61,16 @@ export const sellerApi = {
         }
         return data;
     },
+
     // Fetch the logged-in user's profile
     getProfile: async () => {
-        const res = await fetch(`${BASE_URL}/profile`, { headers: headers() });
-        return await res.json();
+        return await request("/api/auth/profile");
     },
+
     // Register a new farmer account
     register: async (name, email, password, location, extraData = {}) => {
-        console.log("DEBUG: Seller Register Attempt", { name, email });
-        const res = await fetch(`${BASE_URL}/register`, {
+        const data = await request("/api/auth/register", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 name,
                 email,
@@ -54,8 +85,6 @@ export const sellerApi = {
                 lon: extraData.lon
             }),
         });
-        const data = await res.json();
-        console.log("DEBUG: Seller Register Response", data);
         if (data.access_token) {
             localStorage.setItem("sellerToken", data.access_token);
             if (data.user) {
@@ -64,35 +93,29 @@ export const sellerApi = {
         }
         return data;
     },
+
     // Forgot Password flow
     forgotPassword: async (email) => {
-        console.log("DEBUG: Forgot Password Attempt", { email });
-        const res = await fetch(`${BASE_URL}/forgot-password`, {
+        return await request("/api/auth/forgot-password", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email }),
         });
-        return await res.json();
     },
+
     // Send OTP via SMS or WhatsApp
     sendOtp: async (phone, method = "whatsapp") => {
-        console.log("DEBUG: Send OTP Attempt", { phone, method });
-        const res = await fetch(`${BASE_URL}/send-otp`, {
+        return await request("/api/auth/send-otp", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ phone, method }),
         });
-        return await res.json();
     },
+
     // Verify OTP
     verifyOtp: async (phone, otp) => {
-        console.log("DEBUG: Verify OTP Attempt", { phone, otp });
-        const res = await fetch(`${BASE_URL}/verify-otp`, {
+        const data = await request("/api/auth/verify-otp", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ phone, otp }),
         });
-        const data = await res.json();
         if (data.access_token) {
             localStorage.setItem("sellerToken", data.access_token);
             if (data.user) {
@@ -101,14 +124,13 @@ export const sellerApi = {
         }
         return data;
     },
+
     /**
      * Create a new produce listing
-     * Maps frontend camelCase fields to backend snake_case or expected keys
      */
     createListing: async (listingData) => {
-        const res = await fetch(`${BASE_URL}/seller/listing`, {
+        return await request("/api/seller/listing", {
             method: "POST",
-            headers: headers(),
             body: JSON.stringify({
                 crop_name: listingData.cropName,
                 category: listingData.category,
@@ -118,80 +140,77 @@ export const sellerApi = {
                 harvest_date: listingData.harvestDate,
                 quality_grade: listingData.qualityGrade,
                 unit: listingData.unit,
-                image_url: listingData.imageUrl,  // Add image URL
-                images: listingData.images || [] // Add multiple images array
+                image_url: listingData.imageUrl,
+                images: listingData.images || []
             }),
         });
-        return await res.json();
     },
+
     getOrders: async () => {
-        const res = await fetch(`${BASE_URL}/seller/orders`, { headers: headers() });
-        return await res.json();
+        return await request("/api/seller/orders");
     },
+
     getListings: async () => {
-        const res = await fetch(`${BASE_URL}/seller/listings`, { headers: headers() });
-        return await res.json();
+        return await request("/api/seller/listings");
     },
+
     getDashboardStats: async () => {
-        const res = await fetch(`${BASE_URL}/seller/dashboard-stats`, { headers: headers() });
-        return await res.json();
+        return await request("/api/seller/dashboard-stats");
     },
+
     getRevenueChart: async () => {
-        const res = await fetch(`${BASE_URL}/seller/revenue-chart`, { headers: headers() });
-        return await res.json();
+        return await request("/api/seller/revenue-chart");
     },
+
     getTransactions: async () => {
-        const res = await fetch(`${BASE_URL}/api/transactions`, { headers: headers() });
-        return await res.json();
+        return await request("/api/transactions");
     },
+
     getOrderById: async (id) => {
-        const res = await fetch(`${BASE_URL}/seller/order/${id}`, { headers: headers() });
-        return await res.json();
+        return await request(`/api/seller/order/${id}`);
     },
+
     updateOrderStatus: async (id, status) => {
-        const res = await fetch(`${BASE_URL}/seller/order/${id}/update`, {
+        return await request(`/api/seller/order/${id}/update`, {
             method: "PUT",
-            headers: headers(),
             body: JSON.stringify({ status }),
         });
-        return await res.json();
     },
+
     getListingById: async (id) => {
-        const res = await fetch(`${BASE_URL}/seller/listing/${id}`, { headers: headers() });
-        return await res.json();
+        return await request(`/api/seller/listing/${id}`);
     },
+
     updateListing: async (id, listingData) => {
-        const res = await fetch(`${BASE_URL}/seller/listing/${id}`, {
+        return await request(`/api/seller/listing/${id}`, {
             method: "PUT",
-            headers: headers(),
             body: JSON.stringify(listingData),
         });
-        return await res.json();
     },
+
     deleteListing: async (id) => {
-        const res = await fetch(`${BASE_URL}/seller/listing/${id}`, {
-            method: "DELETE",
-            headers: headers(),
+        return await request(`/api/seller/listing/${id}`, {
+            method: "DELETE"
         });
-        return await res.json();
     },
+
     getNotifications: async () => {
-        const res = await fetch(`${BASE_URL}/api/notifications`, { headers: headers() });
-        if (!res.ok) return [];
-        return await res.json();
+        const data = await request("/api/notifications");
+        return data.error ? [] : data;
     },
+
     markNotificationsAsRead: async () => {
-        const res = await fetch(`${BASE_URL}/api/notifications/read`, { method: "PUT", headers: headers() });
-        return await res.json();
+        return await request("/api/notifications/read", { method: "PUT" });
     },
-    // Upload image to Cloudinary with progress tracking
+
+    // Upload image to Cloudinary
     uploadImage: async (file, onProgress) => {
         const formData = new FormData();
         formData.append("image", file);
 
         return new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest();
-            xhr.open("POST", `${BASE_URL}/seller/upload-image`);
+            xhr.open("POST", `${BASE_URL}/api/seller/upload-image`);
             xhr.setRequestHeader("Authorization", `Bearer ${getToken()}`);
 
             xhr.upload.addEventListener("progress", (e) => {
@@ -210,59 +229,48 @@ export const sellerApi = {
                         resolve({ success: false, error: data.error || `Upload failed (${xhr.status})` });
                     }
                 } catch (e) {
-                    resolve({ success: false, error: `Upload failed: Server error (${xhr.status})` });
+                    resolve({ success: false, error: "Server error during upload" });
                 }
             };
 
             xhr.onerror = () => {
-                reject(new Error("Network error during upload"));
+                resolve({ success: false, error: "Server not reachable during upload" });
             };
 
             xhr.send(formData);
         });
     },
-    // Get weather data + smart farming advice (new advisory endpoint)
+
     getWeather: async (params) => {
-        const res = await fetch(`${BASE_URL}/api/weather/current?${params}`, { headers: headers() });
-        return await res.json();
-    },
-    // Get farming advice for a specific crop + location
-    getWeatherAdvice: async (city, crop = "") => {
-        const res = await fetch(`${BASE_URL}/api/weather/advice?city=${city}&crop=${crop}`, { headers: headers() });
-        return await res.json();
-    },
-    // Get active weather alerts
-    getWeatherAlerts: async (city) => {
-        const res = await fetch(`${BASE_URL}/api/weather/alerts?city=${city}`, { headers: headers() });
-        return await res.json();
-    },
-    // Get live simulated market prices for a state (e.g. 'tn')
-    getMarketPrices: async (state = 'tn') => {
-        const res = await fetch(`${BASE_URL}/api/market-prices?state=${state}`, { headers: headers() });
-        return await res.json();
+        return await request(`/api/weather/current?${params}`);
     },
 
-    // New PRD Features
+    getWeatherAdvice: async (city, crop = "") => {
+        return await request(`/api/weather/advice?city=${city}&crop=${crop}`);
+    },
+
+    getWeatherAlerts: async (city) => {
+        return await request(`/api/weather/alerts?city=${city}`);
+    },
+
+    getMarketPrices: async (state = 'tn') => {
+        return await request(`/api/market-prices?state=${state}`);
+    },
+
     detectDisease: async (file) => {
         const formData = new FormData();
         formData.append("image", file);
-        const res = await fetch(`${BASE_URL}/api/detect-disease`, {
+        return await request("/api/detect-disease", {
             method: "POST",
-            headers: { Authorization: `Bearer ${getToken()}` },
             body: formData,
         });
-        return await res.json();
     },
+
     getNearbyLogistics: async (lat, lon) => {
-        const res = await fetch(`${BASE_URL}/api/logistics/nearby?lat=${lat || ""}&lon=${lon || ""}`, {
-            headers: headers(),
-        });
-        return await res.json();
+        return await request(`/api/logistics/nearby?lat=${lat || ""}&lon=${lon || ""}`);
     },
+
     getSellerRating: async (sellerId) => {
-        const res = await fetch(`${BASE_URL}/api/seller/${sellerId}/rating`, {
-            headers: headers(),
-        });
-        return await res.json();
+        return await request(`/api/seller/${sellerId}/rating`);
     },
 };

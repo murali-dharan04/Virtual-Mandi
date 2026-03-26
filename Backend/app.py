@@ -26,7 +26,15 @@ load_dotenv()
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = r"d:\Virtual-Mandi-main\silver-tape-489018-p6-5a3224373280.json"
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})  # More robust CORS for local dev
+CORS(app, resources={r"/api/*": {
+    "origins": [
+        "http://localhost:5173", 
+        "http://localhost:5174", 
+        "https://virtual-mandi-buyer.vercel.app", 
+        "https://virtual-mandi-seller.vercel.app"
+    ],
+    "credentials": True
+}})
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 
 # -------------------- CONFIG --------------------
@@ -77,7 +85,7 @@ def missing_token_callback(error):
 def home():
     return jsonify({"message": "Virtual Mandi Backend Running Successfully!"})
 
-@app.route("/test-db", methods=["GET"])
+@app.route("/api/test-db", methods=["GET"])
 def test_db():
     try:
         # Ping the database to check connectivity
@@ -95,7 +103,7 @@ def test_db():
 
 
 # -------------------- AUTH ROUTES --------------------
-@app.route("/register", methods=["POST"])
+@app.route("/api/auth/register", methods=["POST"])
 def register():
     try:
         data = request.get_json()
@@ -188,7 +196,7 @@ def register():
         return jsonify({"error": f"Internal server error: {str(e)}"}), 500
 
 
-@app.route("/login", methods=["POST"])
+@app.route("/api/auth/login", methods=["POST"])
 def login():
     data = request.get_json()
     if not data:
@@ -232,7 +240,7 @@ def login():
 
 # -------------------- OTP & PASSWORD RESET --------------------
 
-@app.route("/send-otp", methods=["POST"])
+@app.route("/api/auth/send-otp", methods=["POST"])
 def send_otp():
     """Generates and 'sends' a 6-digit OTP for login"""
     data = request.get_json()
@@ -264,7 +272,7 @@ def send_otp():
         "demo_otp": otp_code # Providing for easier testing during hackathon
     })
 
-@app.route("/verify-otp", methods=["POST"])
+@app.route("/api/auth/verify-otp", methods=["POST"])
 def verify_otp():
     """Verifies OTP and issues JWT"""
     data = request.get_json()
@@ -305,7 +313,7 @@ def verify_otp():
         "user": user_data
     })
 
-@app.route("/forgot-password", methods=["POST"])
+@app.route("/api/auth/forgot-password", methods=["POST"])
 def forgot_password():
     """Stub for password reset link generation"""
     data = request.get_json()
@@ -318,7 +326,7 @@ def forgot_password():
     return jsonify({"success": True, "message": "Reset instructions sent to your email."})
 
 # -------------------- PROFILE --------------------
-@app.route("/profile", methods=["GET"])
+@app.route("/api/auth/profile", methods=["GET"])
 @jwt_required()
 def profile():
     user_id = get_jwt_identity()
@@ -336,7 +344,7 @@ def profile():
 
 # -------------------- SELLER ROUTES --------------------
 # Cloudinary Image Upload
-@app.route("/seller/upload-image", methods=["POST"])
+@app.route("/api/seller/upload-image", methods=["POST"])
 @jwt_required()
 def upload_image():
     """Upload product image to Cloudinary"""
@@ -420,7 +428,7 @@ def upload_image():
 
         return jsonify({"error": f"Upload failed: {error_msg}"}), 500
 
-@app.route("/seller/listing", methods=["POST"])
+@app.route("/api/seller/listing", methods=["POST"])
 @jwt_required()
 def add_listing():
     user_id = get_jwt_identity()
@@ -518,7 +526,7 @@ def add_listing():
         traceback.print_exc()
         return jsonify({"error": f"Internal server error: {str(e)}"}), 500
 
-@app.route("/seller/listings", methods=["GET"])
+@app.route("/api/seller/listings", methods=["GET"])
 @jwt_required()
 def get_seller_listings():
     user_id = get_jwt_identity()
@@ -539,7 +547,7 @@ def get_seller_listings():
         })
     return jsonify(listings), 200
 
-@app.route("/seller/listing/<id>", methods=["GET"])
+@app.route("/api/seller/listing/<id>", methods=["GET"])
 @jwt_required()
 def get_listing_by_id(id):
     user_id = get_jwt_identity()
@@ -604,7 +612,7 @@ def increment_listing_view(id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route("/seller/profile/update", methods=["PUT"])
+@app.route("/api/seller/profile/update", methods=["PUT"])
 @jwt_required()
 def update_profile():
     user_id = get_jwt_identity()
@@ -632,7 +640,7 @@ def update_profile():
 
     return jsonify({"message": "Profile updated successfully"}), 200
 
-@app.route("/seller/listing/<id>", methods=["PUT"])
+@app.route("/api/seller/listing/<id>", methods=["PUT"])
 @jwt_required()
 def update_listing(id):
     user_id = get_jwt_identity()
@@ -675,7 +683,7 @@ def update_listing(id):
 
     return jsonify({"message": "Listing updated successfully"}), 200
 
-@app.route("/seller/listing/<id>", methods=["DELETE"])
+@app.route("/api/seller/listing/<id>", methods=["DELETE"])
 @jwt_required()
 def delete_listing(id):
     user_id = get_jwt_identity()
@@ -697,7 +705,7 @@ def delete_listing(id):
 
     return jsonify({"message": "Listing deleted successfully"}), 200
 
-@app.route("/seller/orders", methods=["GET"])
+@app.route("/api/seller/orders", methods=["GET"])
 @jwt_required()
 def get_seller_orders():
     user_id = get_jwt_identity()
@@ -722,7 +730,7 @@ def get_seller_orders():
         })
     return jsonify(orders), 200
 
-@app.route("/seller/order/<id>", methods=["GET"])
+@app.route("/api/seller/order/<id>", methods=["GET"])
 @jwt_required()
 def get_order_by_id(id):
     order = mongo.db.Orders.find_one({"_id": ObjectId(id)})
@@ -741,7 +749,7 @@ def get_order_by_id(id):
         "created_at": order["created_at"]
     }), 200
 
-@app.route("/seller/order/<id>/update", methods=["PUT"])
+@app.route("/api/seller/order/<id>/update", methods=["PUT"])
 @jwt_required()
 def update_order_status(id):
     data = request.get_json()
@@ -806,7 +814,7 @@ def update_order_status(id):
         
     return jsonify({"message": f"Order {id} updated to {status}"}), 200
 
-@app.route("/seller/dashboard-stats", methods=["GET"])
+@app.route("/api/seller/dashboard-stats", methods=["GET"])
 @jwt_required()
 def get_dashboard_stats():
     user_id = get_jwt_identity()
@@ -838,7 +846,7 @@ def get_dashboard_stats():
         "pendingOrders": pending_orders
     }), 200
 
-@app.route("/buyer/orders", methods=["GET"])
+@app.route("/api/buyer/orders", methods=["GET"])
 @jwt_required()
 def get_buyer_orders():
     user_id = get_jwt_identity()
@@ -878,7 +886,7 @@ def get_buyer_transactions():
     return jsonify(transactions), 200
 
 # -------------------- BUYER ONDC MOCK ROUTES --------------------
-@app.route("/bpp/search", methods=["POST"])
+@app.route("/api/bpp/search", methods=["POST"])
 @jwt_required(optional=True)
 def bpp_search():
     try:
@@ -1351,12 +1359,12 @@ def delete_notification(notif_id):
         return jsonify({"error": "Notification not found"}), 404
     return jsonify({"message": "Notification deleted"}), 200
 
-@app.route("/ondc/responses/<transaction_id>", methods=["GET"])
+@app.route("/api/ondc/responses/<transaction_id>", methods=["GET"])
 def get_ondc_responses(transaction_id):
     responses = ondc_responses.get(transaction_id, [])
     return jsonify(responses), 200
 
-@app.route("/bpp/select", methods=["POST"])
+@app.route("/api/bpp/select", methods=["POST"])
 @jwt_required()
 def bpp_select():
     data = request.get_json()
@@ -1388,7 +1396,7 @@ def bpp_select():
     ]
     return jsonify({"message": "Selection initiated"}), 200
 
-@app.route("/bpp/confirm", methods=["POST"])
+@app.route("/api/bpp/confirm", methods=["POST"])
 @jwt_required()
 def bpp_confirm():
     buyer_id = get_jwt_identity()
@@ -1624,7 +1632,7 @@ def identify_standalone():
         "image_url": f"/uploads/{filename}"
     }), 200
 
-@app.route('/uploads/<filename>')
+@app.route('/api/uploads/<filename>')
 def uploaded_file(filename):
     return send_from_directory('uploads', filename)
 
@@ -1722,7 +1730,7 @@ def get_seller_rating(seller_id):
         "joined": "March 2024"
     }), 200
 
-@app.route("/listings", methods=["GET"])
+@app.route("/api/listings", methods=["GET"])
 def get_listings():
     listings = []
     for l in mongo.db.Listings.find():
@@ -1740,7 +1748,7 @@ def get_listings():
     return jsonify(listings), 200
 
 # -------------------- HUGGING FACE CROP DETECTION --------------------
-@app.route("/detect-crop", methods=["POST"])
+@app.route("/api/detect-crop", methods=["POST"])
 def detect_crop():
     """
     Endpoint to detect crop using Hugging Face Inference API.
@@ -1898,7 +1906,7 @@ def get_orders_by_day():
         return jsonify({"error": "Failed to fetch daily orders"}), 500
 
 
-@app.route("/seller/revenue-chart", methods=["GET"])
+@app.route("/api/seller/revenue-chart", methods=["GET"])
 @jwt_required()
 def get_seller_revenue_chart():
     """Get revenue for the last 7 days for the logged-in seller"""
