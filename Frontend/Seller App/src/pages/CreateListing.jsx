@@ -153,15 +153,7 @@ const CreateListing = () => {
                                     </div>
                                 </div>
                                 
-                                {/* AI Smart-Scan Details */}
-                                <div className="pt-2">
-                                    <h4 className="text-sm font-black text-slate-800 mb-2 flex items-center gap-2">
-                                        AI Smart-Scan
-                                    </h4>
-                                    <p className="text-xs font-medium text-slate-500 leading-relaxed max-w-sm">
-                                        Upload a clear photo. Our AI will analyze color, texture, and moisture to suggest the optimal Grade and Price.
-                                    </p>
-                                </div>
+
                             </div>
 
                             {/* Uploaded Images Preview */}
