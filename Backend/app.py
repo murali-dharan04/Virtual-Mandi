@@ -15,6 +15,15 @@ import cloudinary
 import cloudinary.uploader
 from werkzeug.utils import secure_filename
 import requests
+import json as _json
+
+def get_request_json():
+    """Parse request body using stdlib json to avoid flask-pymongo bson decoder conflict."""
+    try:
+        raw = request.get_data(as_text=True)
+        return _json.loads(raw) if raw else {}
+    except Exception:
+        return {}
 
 def log_to_file(message):
     log_path = os.path.join(os.path.dirname(__file__), "backend.log")
@@ -103,7 +112,7 @@ def test_db():
 def register():
     print(f"DEBUG: Register request received from {request.remote_addr}")
     try:
-        data = request.get_json(force=True)
+        data = get_request_json()
         print(f"DEBUG: Register data: {data}")
         log_to_file(f"Registering user with data: {data}")
         if not data:
@@ -198,7 +207,7 @@ def register():
 def login():
     print("LOG: Login attempt started")
     try:
-        data = request.get_json(force=True)
+        data = get_request_json()
         print(f"LOG: Data: {data}")
         email = data.get("email")
         password = data.get("password")
