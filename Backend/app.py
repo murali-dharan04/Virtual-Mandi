@@ -249,7 +249,127 @@ def login():
         print(traceback.format_exc())
         return jsonify({"error": str(e)}), 500
 
+# -------------------- GOOGLE OAUTH --------------------
+@app.route("/api/auth/google", methods=["POST"])
+def google_auth():
+    """
+    Verify a Google ID token (credential) from @react-oauth/google,
+    find-or-create the user in MongoDB, and return a JWT.
+    """
+    try:
+        data = get_request_json()
+        credential = data.get("credential")
+        role = data.get("role", "buyer")   # "farmer" (Seller App) or "buyer" (Buyer App)
+
+        if not credential:
+            return jsonify({"error": "Google credential is required"}), 400
+
+        if role not in ["farmer", "buyer"]:
+            return jsonify({"error": "Role must be farmer or buyer"}), 400
+
+        # ---- Verify the ID token with Google ----
+        from google.oauth2 import id_token
+        from google.auth.transport import requests as google_requests
+
+        GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+        if not GOOGLE_CLIENT_ID:
+            return jsonify({"error": "Google Client ID not configured on server"}), 500
+
+        try:
+            idinfo = id_token.verify_oauth2_token(
+                credential,
+                google_requests.Request(),
+                GOOGLE_CLIENT_ID
+            )
+        except ValueError as ve:
+            log_to_file(f"Google token verification failed: {ve}")
+            return jsonify({"error": f"Invalid Google token: {str(ve)}"}), 401
+
+        google_id = idinfo.get("sub")
+        email     = idinfo.get("email", "")
+        name      = idinfo.get("name", "")
+        picture   = idinfo.get("picture", "")
+
+        if not google_id or not email:
+            return jsonify({"error": "Incomplete profile data from Google"}), 400
+
+        # ---- Find existing user by googleId OR email ----
+        user = mongo.db.Users.find_one({
+            "$or": [{"googleId": google_id}, {"email": email}]
+        })
+
+        if user:
+            user_id = user["_id"]
+            # Attach Google info if the account was previously email-only
+            if not user.get("googleId"):
+                mongo.db.Users.update_one(
+                    {"_id": user_id},
+                    {"$set": {
+                        "googleId": google_id,
+                        "profilePicture": picture,
+                        "auth_provider": "google"
+                    }}
+                )
+            effective_role = user.get("role", role)
+        else:
+            # ---- Create a new user ----
+            user_doc = {
+                "name": name,
+                "email": email,
+                "googleId": google_id,
+                "profilePicture": picture,
+                "role": role,
+                "location": "",
+                "phone": "",
+                "whatsapp_number": "",
+                "district": "",
+                "state": "",
+                "created_at": datetime.utcnow(),
+                "auth_provider": "google"
+            }
+            user_id = mongo.db.Users.insert_one(user_doc).inserted_id
+
+            # Create profile & wallet
+            if role == "farmer":
+                mongo.db.FarmerProfiles.insert_one({
+                    "user_id": user_id, "listings": []
+                })
+            else:
+                mongo.db.BuyerProfiles.insert_one({
+                    "user_id": user_id, "location": ""
+                })
+            mongo.db.Wallet.insert_one({"user_id": user_id, "balance": 0})
+            effective_role = role
+            log_to_file(f"New Google user created: {email} ({effective_role})")
+
+        # ---- Issue JWT ----
+        access_token = create_access_token(identity=str(user_id))
+        refreshed_user = mongo.db.Users.find_one({"_id": user_id})
+        user_data = {
+            "id": str(user_id),
+            "name": refreshed_user.get("name", name),
+            "email": refreshed_user.get("email", email),
+            "role": effective_role,
+            "profilePicture": refreshed_user.get("profilePicture", picture),
+            "location": refreshed_user.get("location", "")
+        }
+
+        log_to_file(f"Google login success: {email}")
+        return jsonify({
+            "message": "Google login successful",
+            "access_token": access_token,
+            "role": effective_role,
+            "user": user_data
+        }), 200
+
+    except Exception as e:
+        import traceback
+        tb = traceback.format_exc()
+        log_to_file(f"Google Auth ERROR: {str(e)}\n{tb}")
+        return jsonify({"error": f"Internal server error: {str(e)}"}), 500
+
 # -------------------- OTP & PASSWORD RESET --------------------
+
 
 @app.route("/api/auth/send-otp", methods=["POST"])
 def send_otp():

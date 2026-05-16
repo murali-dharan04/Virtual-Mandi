@@ -62,6 +62,36 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    /**
+     * Google OAuth login – receives a Google ID token from @react-oauth/google,
+     * sends it to the Flask backend, then stores the resulting JWT session.
+     */
+    const googleLogin = async (credential) => {
+        try {
+            const res = await fetch(`${BASE_URL}/api/auth/google`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ credential, role: "buyer" }),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.error || "Google authentication failed");
+            }
+            if (data.access_token && data.user) {
+                const userData = { ...data.user, token: data.access_token };
+                setUser(userData);
+                localStorage.setItem("buyerUser", JSON.stringify(userData));
+                localStorage.setItem("buyerToken", data.access_token);
+                joinRoom(data.user.id || data.user._id);
+                return true;
+            }
+            throw new Error("Incomplete response from server");
+        } catch (err) {
+            console.error("Google login context error:", err);
+            throw err;
+        }
+    };
+
     const register = async (name, email, password, type) => {
         try {
             // Role 'buyer' is handled by the api service
@@ -83,7 +113,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, register, logout }}>
+        <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, googleLogin, register, logout }}>
             {children}
         </AuthContext.Provider>
     );
@@ -94,3 +124,4 @@ export const useAuth = () => {
     if (!context) throw new Error("useAuth must be used within AuthProvider");
     return context;
 };
+

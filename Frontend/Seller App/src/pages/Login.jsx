@@ -1,34 +1,25 @@
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-    Eye, EyeOff, ArrowRight, Phone, MessageSquare,
-    CheckCircle2, RefreshCw, ArrowLeft, Mail, Lock
-} from "lucide-react";
+import { Eye, EyeOff, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { sellerApi } from "@/lib/api";
 import PageTransition from "@/components/PageTransition";
 import AuthLayout from "@/components/AuthLayout";
+import GoogleLoginButton from "@/components/GoogleLoginButton";
 
 const Login = () => {
     const navigate = useNavigate();
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
-
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
     const handleEmailLogin = async (e) => {
         e.preventDefault();
-        if (!email || !password) {
-            setError("All fields are mandatory");
-            return;
-        }
+        if (!email || !password) { setError("All fields are mandatory"); return; }
         setIsLoading(true);
         setError("");
         try {
@@ -41,7 +32,7 @@ const Login = () => {
             } else {
                 setError(res.error || "Login failed");
             }
-        } catch (err) {
+        } catch {
             setError("Network error. Please check your connection.");
         } finally {
             setIsLoading(false);
@@ -55,13 +46,25 @@ const Login = () => {
         <PageTransition>
             <AuthLayout
                 title="Connect to Mandi"
-                subtitle="Sign in with your email and password."
+                subtitle="Sign in with Google or your email."
             >
                 <div className="relative">
-                    <form
-                        onSubmit={handleEmailLogin}
-                        className="space-y-6"
-                    >
+                    {/* ── Google Sign-In ── */}
+                    <div className="mb-6">
+                        <GoogleLoginButton onError={(msg) => setError(msg)} />
+                    </div>
+
+                    {/* ── Divider ── */}
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="flex-1 h-px bg-slate-100" />
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-300">
+                            or continue with email
+                        </span>
+                        <div className="flex-1 h-px bg-slate-100" />
+                    </div>
+
+                    {/* ── Email / Password Form ── */}
+                    <form onSubmit={handleEmailLogin} className="space-y-6">
                         <div className="space-y-4">
                             <div className="space-y-2">
                                 <Label className={labelClass}>Email Address</Label>

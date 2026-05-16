@@ -4,6 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Leaf, Eye, EyeOff } from "lucide-react";
 import { motion } from "framer-motion";
 import PageTransition from "@/components/PageTransition";
+import GoogleLoginButton from "@/components/GoogleLoginButton";
 
 const Login = () => {
     const [email, setEmail] = useState("");
@@ -38,6 +39,7 @@ const Login = () => {
                     transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
                     className="w-full max-w-md"
                 >
+                    {/* Header */}
                     <div className="mb-8 text-center">
                         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl gradient-hero shadow-elevated">
                             <Leaf className="h-8 w-8 text-primary-foreground" />
@@ -55,6 +57,19 @@ const Login = () => {
                             <div className="mb-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
                         )}
 
+                        {/* ── Google Sign-In ── */}
+                        <div className="mb-5">
+                            <GoogleLoginButton onError={(msg) => setError(msg)} />
+                        </div>
+
+                        {/* ── Divider ── */}
+                        <div className="flex items-center gap-3 mb-5">
+                            <div className="flex-1 h-px bg-border" />
+                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">or</span>
+                            <div className="flex-1 h-px bg-border" />
+                        </div>
+
+                        {/* ── Email / Password ── */}
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
                                 <label className="mb-1.5 block text-sm font-medium text-foreground">Email Address</label>

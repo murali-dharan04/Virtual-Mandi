@@ -9,3 +9,4 @@ cloudinary
 pymongo
 gunicorn
 flask-socketio
+google-auth
