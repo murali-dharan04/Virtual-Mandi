@@ -5,6 +5,7 @@ import { ArrowRight, UserPlus, LogIn } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import PageTransition from "@/components/PageTransition";
 import AuthLayout from "@/components/AuthLayout";
+import GoogleLoginButton from "@/components/GoogleLoginButton";
 
 const AuthLanding = () => {
     const navigate = useNavigate();
@@ -41,18 +42,30 @@ const AuthLanding = () => {
                         </motion.p>
                     </div>
 
+                    <motion.div variants={itemVariants} className="mb-6">
+                        <GoogleLoginButton onError={(msg) => console.error(msg)} />
+                    </motion.div>
+
+                    <div className="flex items-center gap-3 my-6">
+                        <div className="flex-1 h-px bg-slate-200" />
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                            or continue with email
+                        </span>
+                        <div className="flex-1 h-px bg-slate-200" />
+                    </div>
+
                     <motion.div variants={itemVariants}>
                         <Button
                             onClick={() => navigate('/auth/login')}
                             className="w-full h-18 text-lg font-black uppercase rounded-2xl bg-[#2E7D32] hover:bg-[#1B5E20] shadow-xl shadow-green-900/20 group transition-all duration-300"
                         >
                             <LogIn className="mr-3 h-6 w-6 group-hover:translate-x-1 transition-transform" />
-                            Sign In
+                            Sign In with Email
                             <ArrowRight className="ml-auto h-5 w-5 opacity-50" />
                         </Button>
                     </motion.div>
 
-                    <motion.div variants={itemVariants}>
+                    <motion.div variants={itemVariants} className="mt-4">
                         <Button
                             onClick={() => navigate('/auth/register')}
                             variant="outline"
