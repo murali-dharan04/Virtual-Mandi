@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Eye, EyeOff, User, Mail, Lock, Leaf, Tractor, Phone, MapPin, Compass, ArrowRight, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, User, Mail, Lock, Leaf, Tractor, Phone, MapPin, Compass, ArrowRight, ArrowLeft, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, useAnimationFrame } from "framer-motion";
 import PageTransition from "@/components/PageTransition";
 import { sellerApi } from "@/lib/api";
 import { toast } from "sonner";
+import { indiaStatesDistricts } from "@/data/indiaStatesDistricts";
 
 const fadeReveal = {
     hidden: { opacity: 0, filter: "blur(10px)", y: 10 },
@@ -80,6 +81,63 @@ const FluidParticles = ({ mouseX, mouseY }) => {
     );
 };
 
+const CustomDropdown = ({ value, onChange, options, placeholder, icon: Icon, disabled }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const inputContainerClass = "flex items-center w-full h-[50px] rounded-xl bg-white/60 backdrop-blur-md px-4 transition-all duration-300 border border-white/50 group relative overflow-hidden";
+    
+    return (
+        <div className="relative w-full" ref={dropdownRef}>
+            <div 
+                className={`${inputContainerClass} ${isOpen ? 'bg-white shadow-[0_4px_25px_rgba(74,222,128,0.25)] border-[#4ade80]/60' : 'hover:bg-white/80'} ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                onClick={() => !disabled && setIsOpen(!isOpen)}
+            >
+                <Icon className={`h-5 w-5 ${isOpen ? 'text-[#15803d] scale-110' : 'text-[#166534]/50'} transition-all duration-300 z-10`} />
+                <span className={`flex-1 ml-3 text-sm z-10 font-semibold truncate ${value ? 'text-[#14532d]' : 'text-[#166534]/50'}`}>
+                    {value || placeholder}
+                </span>
+                <ChevronDown className={`absolute right-4 h-4 w-4 text-[#166534]/50 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''} pointer-events-none z-10`} />
+            </div>
+            
+            <AnimatePresence>
+                {isOpen && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -5 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute top-[calc(100%+4px)] left-0 right-0 bg-white rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-green-100 overflow-hidden z-[100] max-h-[220px] overflow-y-auto"
+                    >
+                        {options.map((opt) => (
+                            <div
+                                key={opt}
+                                className={`px-4 py-2.5 text-sm font-semibold cursor-pointer hover:bg-green-50 transition-colors ${value === opt ? 'bg-green-100 text-green-800' : 'text-[#14532d]'}`}
+                                onClick={() => {
+                                    onChange(opt);
+                                    setIsOpen(false);
+                                }}
+                            >
+                                {opt}
+                            </div>
+                        ))}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+};
+
 const Register = () => {
     const navigate = useNavigate();
     const [step, setStep] = useState(0); 
@@ -91,8 +149,10 @@ const Register = () => {
     const [location, setLocation] = useState("");
     const [mobile, setMobile] = useState("");
     const [whatsapp, setWhatsapp] = useState("");
-    const [district, setDistrict] = useState("");
     const [state, setState] = useState("");
+    const [district, setDistrict] = useState("");
+    
+    const availableDistricts = state ? indiaStatesDistricts[state] || [] : [];
 
     const [showPw, setShowPw] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -447,25 +507,32 @@ const Register = () => {
                                         </div>
 
                                         <div className="flex gap-2">
-                                            <div className="space-y-1 flex-1">
-                                                <label className="flex items-center gap-1.5 text-[12.5px] font-extrabold text-[#14532d] ml-1">
-                                                    District
-                                                    <span className="text-red-500 text-[18px] font-black leading-none relative -top-0.5">*</span>
-                                                </label>
-                                                <div className={inputContainerClass}>
-                                                    <Compass className={iconClass} />
-                                                    <input type="text" value={district} onChange={(e) => setDistrict(e.target.value)} placeholder="District" required className={inputClass} />
-                                                </div>
-                                            </div>
-                                            <div className="space-y-1 flex-1">
+                                            <div className="space-y-1 w-1/2">
                                                 <label className="flex items-center gap-1.5 text-[12.5px] font-extrabold text-[#14532d] ml-1">
                                                     State
                                                     <span className="text-red-500 text-[18px] font-black leading-none relative -top-0.5">*</span>
                                                 </label>
-                                                <div className={inputContainerClass}>
-                                                    <Compass className={iconClass} />
-                                                    <input type="text" value={state} onChange={(e) => setState(e.target.value)} placeholder="State" required className={inputClass} />
-                                                </div>
+                                                <CustomDropdown
+                                                    value={state}
+                                                    onChange={(val) => { setState(val); setDistrict(""); }}
+                                                    options={Object.keys(indiaStatesDistricts)}
+                                                    placeholder="Select State"
+                                                    icon={Compass}
+                                                />
+                                            </div>
+                                            <div className="space-y-1 w-1/2">
+                                                <label className="flex items-center gap-1.5 text-[12.5px] font-extrabold text-[#14532d] ml-1">
+                                                    District
+                                                    <span className="text-red-500 text-[18px] font-black leading-none relative -top-0.5">*</span>
+                                                </label>
+                                                <CustomDropdown
+                                                    value={district}
+                                                    onChange={(val) => setDistrict(val)}
+                                                    options={availableDistricts}
+                                                    placeholder="Select District"
+                                                    icon={MapPin}
+                                                    disabled={!state}
+                                                />
                                             </div>
                                         </div>
 
