@@ -157,21 +157,29 @@ const Home = () => {
                 {/* Category Quick Chips & Mandi news */}
                 <div className="container max-w-6xl mx-auto px-4 py-1.5">
                     <div className="flex flex-col lg:flex-row gap-4">
-                        <div className="flex-1 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-                            {categories.map((cat) => (
-                                <motion.button
-                                    key={cat}
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    onClick={() => setFilters(f => ({ ...f, category: cat }))}
-                                    className={`whitespace-nowrap px-5 py-2 rounded-full text-xs font-bold border transition-all shadow-sm ${filters.category === cat
-                                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-emerald-200'
-                                        : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-300 hover:text-emerald-700 hover:shadow-md'
-                                        }`}
-                                >
-                                    {cat}
-                                </motion.button>
-                            ))}
+                        <div className="flex-1 flex gap-3 overflow-x-auto pb-2 scrollbar-hide items-center">
+                            {categories.map((cat) => {
+                                const isSelected = filters.category === cat;
+                                let colorClass = 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:shadow-md';
+                                if (isSelected) {
+                                    if (cat === 'Vegetables') colorClass = 'bg-[#10b981] text-white border-[#10b981] shadow-lg shadow-[#10b981]/30';
+                                    else if (cat === 'Fruits') colorClass = 'bg-[#ec4899] text-white border-[#ec4899] shadow-lg shadow-[#ec4899]/30';
+                                    else if (cat === 'Grains') colorClass = 'bg-[#eab308] text-white border-[#eab308] shadow-lg shadow-[#eab308]/30';
+                                    else colorClass = 'bg-[#3b82f6] text-white border-[#3b82f6] shadow-lg shadow-[#3b82f6]/30';
+                                }
+
+                                return (
+                                    <motion.button
+                                        key={cat}
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={() => setFilters(f => ({ ...f, category: cat }))}
+                                        className={`whitespace-nowrap px-6 py-2.5 rounded-full text-sm font-black border-2 transition-all ${colorClass}`}
+                                    >
+                                        {cat}
+                                    </motion.button>
+                                );
+                            })}
                         </div>
 
                         {/* Mandi News Ticker */}

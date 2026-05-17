@@ -56,7 +56,7 @@ const Navbar = () => {
     }, [isAuthenticated]);
 
     const links = [
-        { to: "/", label: t("nav.browse"), icon: ShoppingCart },
+        { to: "/home", label: t("nav.browse"), icon: ShoppingCart },
         { to: "/orders", label: t("nav.orders"), icon: Package },
         { to: "/transactions", label: t("nav.transactions"), icon: Receipt },
     ];
@@ -73,7 +73,7 @@ const Navbar = () => {
     return (
         <nav className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 shadow-sm transition-all duration-300">
             <div className="container relative z-10 flex h-20 items-center justify-between">
-                <Link to="/" className="flex items-center gap-3 group">
+                <Link to="/home" className="flex items-center gap-3 group">
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-green-600 shadow-lg shadow-green-500/30 transition-transform group-hover:scale-105">
                         <Leaf className="h-6 w-6 text-white" />
                     </div>

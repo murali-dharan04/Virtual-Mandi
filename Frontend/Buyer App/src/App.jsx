@@ -3,11 +3,13 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { AnimatePresence } from "framer-motion";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import Navbar from "@/components/Navbar";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
+import ForgotPassword from "@/pages/ForgotPassword";
 import Home from "@/pages/Home";
 import ProductDetail from "@/pages/ProductDetail";
 import Orders from "@/pages/Orders";
@@ -54,26 +56,39 @@ const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }) => {
     const { isAuthenticated } = useAuth();
-    if (!isAuthenticated) return <Navigate to="/login" replace />;
+    if (!isAuthenticated) return <Navigate to="/" replace />;
     return <>{children}</>;
 };
 
-const AppRoutes = () => (
-    <>
-        <Navbar />
-        <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-            <Route path="/product/:id" element={<ProtectedRoute><ProductDetail /></ProtectedRoute>} />
-            <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
-            <Route path="/orders/:orderId" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
-            <Route path="/transactions" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
-            <Route path="/intelligence" element={<ProtectedRoute><DemandAnalytics /></ProtectedRoute>} />
-            <Route path="*" element={<NotFound />} />
-        </Routes>
-    </>
-);
+const GuestRoute = ({ children }) => {
+    const { isAuthenticated } = useAuth();
+    if (isAuthenticated) return <Navigate to="/home" replace />;
+    return <>{children}</>;
+};
+
+const AppRoutes = () => {
+    const location = useLocation();
+    return (
+        <>
+            <Navbar />
+            <AnimatePresence mode="wait">
+                <Routes location={location} key={location.pathname}>
+                    <Route path="/" element={<GuestRoute><Login /></GuestRoute>} />
+                    <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
+                    <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
+                    <Route path="/forgot-password" element={<GuestRoute><ForgotPassword /></GuestRoute>} />
+                    <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+                    <Route path="/product/:id" element={<ProtectedRoute><ProductDetail /></ProtectedRoute>} />
+                    <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+                    <Route path="/orders/:orderId" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+                    <Route path="/transactions" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
+                    <Route path="/intelligence" element={<ProtectedRoute><DemandAnalytics /></ProtectedRoute>} />
+                    <Route path="*" element={<NotFound />} />
+                </Routes>
+            </AnimatePresence>
+        </>
+    );
+};
 
 const App = () => {
     useEffect(() => {

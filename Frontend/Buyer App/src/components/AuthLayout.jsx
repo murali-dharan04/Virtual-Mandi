@@ -8,14 +8,14 @@ const AuthLayout = ({ children, title, subtitle, showBackButton = true }) => {
 
     return (
         <div className="min-h-screen font-poppins relative flex flex-col overflow-hidden">
-            {/* Full Top Section — Stunning Wheat Field at Golden Hour */}
+            {/* Full Top — Stunning Colorful Farm Market Background */}
             <div 
                 className="absolute top-0 left-0 w-full h-[44vh] bg-cover bg-center"
-                style={{ backgroundImage: "url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=90&w=1932&auto=format&fit=crop')" }}
+                style={{ backgroundImage: "url('https://images.unsplash.com/photo-1542838132-92c53300491e?q=90&w=1974&auto=format&fit=crop')" }}
             >
-                {/* Rich layered overlay for drama */}
-                <div className="absolute inset-0 bg-gradient-to-b from-[#0d2c12]/40 via-[#1a4a22]/20 to-transparent" />
-                <div className="absolute inset-0 bg-gradient-to-r from-[#0d2c12]/30 via-transparent to-transparent" />
+                {/* Warm layered overlay */}
+                <div className="absolute inset-0 bg-gradient-to-b from-[#3b1c08]/30 via-[#78350f]/10 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-r from-[#3b1c08]/30 via-transparent to-transparent" />
             </div>
 
             {/* Back Button */}
@@ -36,19 +36,19 @@ const AuthLayout = ({ children, title, subtitle, showBackButton = true }) => {
                     initial={{ opacity: 0, y: 50 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                    className="bg-white min-h-[68vh] rounded-t-[3.5rem] px-8 pt-10 pb-10 shadow-[0_-20px_60px_rgba(0,0,0,0.15)] relative"
+                    className="bg-white min-h-[68vh] rounded-t-[3.5rem] px-8 pt-10 pb-10 shadow-[0_-20px_60px_rgba(0,0,0,0.12)] relative"
                 >
-                    {/* Floating Leaf Accent */}
-                    <div className="absolute -top-14 right-8 rotate-[20deg] drop-shadow-2xl">
-                        <Leaf className="h-20 w-20 text-[#2E7D32]" fill="#2E7D32" strokeWidth={0.5} />
+                    {/* Floating Produce Accent leaves */}
+                    <div className="absolute -top-14 right-8 rotate-[-25deg] drop-shadow-2xl">
+                        <Leaf className="h-20 w-20 text-[#d97706]" fill="#d97706" strokeWidth={0.5} />
                     </div>
-                    <div className="absolute -top-8 right-16 rotate-[-10deg] drop-shadow-lg opacity-60">
-                        <Leaf className="h-10 w-10 text-[#4CAF50]" fill="#4CAF50" strokeWidth={0.5} />
+                    <div className="absolute -top-8 right-16 rotate-[15deg] drop-shadow-lg opacity-60">
+                        <Leaf className="h-10 w-10 text-[#f59e0b]" fill="#f59e0b" strokeWidth={0.5} />
                     </div>
 
                     <div className="text-center mb-8">
-                        <h2 className="text-3xl font-bold text-[#1B4332] tracking-tight">{title}</h2>
-                        <p className="text-[#52796F] text-sm mt-2 font-medium">{subtitle}</p>
+                        <h2 className="text-3xl font-bold text-[#92400e] tracking-tight">{title}</h2>
+                        <p className="text-[#b45309]/70 text-sm mt-2 font-medium">{subtitle}</p>
                     </div>
 
                     {children}

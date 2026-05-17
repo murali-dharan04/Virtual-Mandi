@@ -170,28 +170,28 @@ const Dashboard = () => {
                 <div className="pt-2">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 px-2">Quick Management</p>
                     <div className="grid grid-cols-3 gap-4">
-                        <button onClick={() => navigate("/listings/new")} className="bg-white rounded-[2rem] p-6 text-center shadow-sm hover:shadow-md transition-all group flex flex-col items-center justify-center border border-slate-50">
-                            <div className="h-14 w-14 rounded-2xl bg-[#10b981] text-white flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-lg shadow-emerald-200">
+                        <button onClick={() => navigate("/listings/new")} className="bg-[#fdf2f8] rounded-[2rem] p-6 text-center shadow-sm hover:shadow-md transition-all group flex flex-col items-center justify-center border border-pink-100">
+                            <div className="h-14 w-14 rounded-full bg-[#ec4899] text-white flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-lg shadow-pink-200">
                                 <Plus className="h-6 w-6" strokeWidth={3} />
                             </div>
                             <h4 className="text-xs font-black text-slate-800 uppercase tracking-wide">Add Produce</h4>
-                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">New Produce</p>
+                            <p className="text-[9px] font-bold text-pink-400 uppercase tracking-widest mt-1">New Produce</p>
                         </button>
 
-                        <button onClick={() => navigate("/dashboard/disease-lab")} className="bg-white rounded-[2rem] p-6 text-center shadow-sm hover:shadow-md transition-all group flex flex-col items-center justify-center border border-slate-50">
-                            <div className="h-14 w-14 rounded-2xl bg-[#34d399] text-white flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-lg shadow-emerald-100">
+                        <button onClick={() => navigate("/dashboard/disease-lab")} className="bg-[#fefce8] rounded-[2rem] p-6 text-center shadow-sm hover:shadow-md transition-all group flex flex-col items-center justify-center border border-yellow-100">
+                            <div className="h-14 w-14 rounded-full bg-[#eab308] text-white flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-lg shadow-yellow-200">
                                 <Leaf className="h-6 w-6" strokeWidth={2.5} />
                             </div>
                             <h4 className="text-xs font-black text-slate-800 uppercase tracking-wide">Disease Lab</h4>
-                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">AI Diagnostic</p>
+                            <p className="text-[9px] font-bold text-yellow-500 uppercase tracking-widest mt-1">AI Diagnostic</p>
                         </button>
 
-                        <button onClick={() => navigate("/dashboard/logistics")} className="bg-white rounded-[2rem] p-6 text-center shadow-sm hover:shadow-md transition-all group flex flex-col items-center justify-center border border-slate-50">
-                            <div className="h-14 w-14 rounded-2xl bg-[#60a5fa] text-white flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-lg shadow-blue-100">
+                        <button onClick={() => navigate("/dashboard/logistics")} className="bg-[#eff6ff] rounded-[2rem] p-6 text-center shadow-sm hover:shadow-md transition-all group flex flex-col items-center justify-center border border-blue-100">
+                            <div className="h-14 w-14 rounded-full bg-[#3b82f6] text-white flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-lg shadow-blue-200">
                                 <Truck className="h-6 w-6" strokeWidth={2.5} />
                             </div>
                             <h4 className="text-xs font-black text-slate-800 uppercase tracking-wide">Logistics</h4>
-                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Find Transport</p>
+                            <p className="text-[9px] font-bold text-blue-400 uppercase tracking-widest mt-1">Find Transport</p>
                         </button>
                     </div>
                 </div>

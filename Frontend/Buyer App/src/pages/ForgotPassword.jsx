@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, useAnimationFrame } from "framer-motion";
 import { useNavigate, Link } from "react-router-dom";
-import { Mail, Lock, ArrowLeft, ArrowRight, ShieldCheck, Tractor, Leaf } from "lucide-react";
-import { sellerApi } from "@/lib/api";
+import { Mail, Lock, Leaf, ShoppingBag, ArrowRight, ArrowLeft, ShieldCheck, User } from "lucide-react";
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, useAnimationFrame } from "framer-motion";
 import PageTransition from "@/components/PageTransition";
 import OtpInput from "@/components/OtpInput";
 import { toast } from "sonner";
 
+// Clean, snappy animations
 const fadeReveal = {
     hidden: { opacity: 0, filter: "blur(10px)", y: 10 },
     show: { opacity: 1, filter: "blur(0px)", y: 0, transition: { duration: 0.7, ease: "easeOut" } }
@@ -17,7 +17,7 @@ const slideUpSnappy = {
     show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 25 } }
 };
 
-// Fluid Physics Particles Component (Warm Golden)
+// Fluid Physics Particles Component
 const FluidParticles = ({ mouseX, mouseY }) => {
     const numParticles = 30;
     const particles = useRef(
@@ -25,16 +25,18 @@ const FluidParticles = ({ mouseX, mouseY }) => {
             x: Math.random() * window.innerWidth,
             y: Math.random() * window.innerHeight,
             vx: (Math.random() - 0.5) * 1,
-            vy: (Math.random() - 0.5) * 1 - 0.5,
-            size: Math.random() * 8 + 3,
+            vy: (Math.random() - 0.5) * 1 - 0.5, 
+            size: Math.random() * 6 + 2,
         }))
     );
+
+    const [renders, setRenders] = useState(0);
 
     useAnimationFrame(() => {
         const mx = mouseX.get();
         const my = mouseY.get();
-        const repelRadius = 160;
-        const repelForce = 6;
+        const repelRadius = 150;
+        const repelForce = 5;
 
         particles.current.forEach(p => {
             const dx = p.x - mx;
@@ -52,13 +54,14 @@ const FluidParticles = ({ mouseX, mouseY }) => {
             p.vx *= 0.92;
             p.vy *= 0.92;
             p.x += Math.sin(Date.now() / 2000 + p.size) * 0.5;
-            p.y -= 0.6; 
+            p.y -= 0.5; 
 
             if (p.x < 0) p.x = window.innerWidth;
             if (p.x > window.innerWidth) p.x = 0;
             if (p.y < 0) p.y = window.innerHeight;
             if (p.y > window.innerHeight) p.y = 0;
         });
+        setRenders(r => r + 1);
     });
 
     return (
@@ -66,7 +69,7 @@ const FluidParticles = ({ mouseX, mouseY }) => {
             {particles.current.map((p, i) => (
                 <div
                     key={i}
-                    className="absolute rounded-full bg-[#fbbf24]/50 mix-blend-screen blur-[3px] transition-transform duration-0"
+                    className="absolute rounded-full bg-white/40 mix-blend-screen blur-[2px] transition-transform duration-0"
                     style={{
                         width: p.size + "px",
                         height: p.size + "px",
@@ -80,7 +83,7 @@ const FluidParticles = ({ mouseX, mouseY }) => {
 
 const ForgotPassword = () => {
     const navigate = useNavigate();
-    const [step, setStep] = useState(0);
+    const [step, setStep] = useState(0); 
     const [email, setEmail] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [mounted, setMounted] = useState(false);
@@ -93,7 +96,6 @@ const ForgotPassword = () => {
 
     // Weather Sync API
     useEffect(() => {
-        setMounted(true);
         const fetchWeather = async () => {
             try {
                 const res = await fetch("https://wttr.in/?format=j1");
@@ -109,6 +111,7 @@ const ForgotPassword = () => {
             }
         };
         fetchWeather();
+        setMounted(true);
     }, []);
 
     // 3D Tilt Logic
@@ -154,26 +157,19 @@ const ForgotPassword = () => {
     const currentMonth = new Date().getMonth();
     const isAutumnOrWinter = currentMonth >= 8 || currentMonth <= 1;
     const themeGradient = isAutumnOrWinter 
-        ? "from-[#1a3622]/95 via-[#2b5936]/70"
-        : "from-[#0f3b21]/95 via-[#1b5e33]/70";
+        ? "from-[#451a03]/90 via-[#78350f]/60" 
+        : "from-[#064e3b]/90 via-[#0f766e]/60";
 
     const handleSendResetCode = async (e) => {
         e.preventDefault();
         if (!email) { toast.error("Email is required"); return; }
         setIsLoading(true);
-        try {
-            const res = await sellerApi.forgotPassword(email);
-            if (res.success) {
-                toast.success("Recovery code sent!");
-                setStep(1);
-            } else {
-                toast.error(res.error || "Failed to send reset code");
-            }
-        } catch (err) {
-            toast.error("Network error");
-        } finally {
+        // Mocking API call for Buyer App
+        setTimeout(() => {
+            toast.success("Recovery code sent!");
+            setStep(1);
             setIsLoading(false);
-        }
+        }, 1500);
     };
 
     const handleVerifyOtp = async (otp) => {
@@ -192,19 +188,15 @@ const ForgotPassword = () => {
         }
 
         setIsLoading(true);
-        try {
-            setTimeout(() => {
-                toast.success("Password reset successfully! Redirecting...");
-                navigate("/auth/login");
-            }, 1500);
-        } catch (err) {
-            toast.error("Reset failed");
-        }
+        setTimeout(() => {
+            toast.success("Password reset successfully! Redirecting...");
+            navigate("/login");
+        }, 1500);
     };
 
-    const inputContainerClass = "flex items-center w-full h-[54px] rounded-xl bg-white/60 backdrop-blur-md px-4 transition-all duration-300 focus-within:bg-white focus-within:shadow-[0_4px_25px_rgba(74,222,128,0.25)] border border-white/50 focus-within:border-[#4ade80]/60 group relative overflow-hidden";
-    const inputClass = "flex-1 bg-transparent border-none text-[#14532d] placeholder:text-[#166534]/50 font-semibold outline-none ml-3 text-sm z-10";
-    const iconClass = "h-5 w-5 text-[#166534]/50 group-focus-within:text-[#15803d] group-focus-within:scale-110 transition-all duration-300 z-10";
+    const inputContainerClass = "flex items-center w-full h-[54px] rounded-xl bg-white/60 backdrop-blur-md px-4 transition-all duration-300 focus-within:bg-white focus-within:shadow-[0_4px_25px_rgba(245,158,11,0.25)] border border-white/50 focus-within:border-[#f59e0b]/60 group relative overflow-hidden";
+    const inputClass = "flex-1 bg-transparent border-none text-[#78350f] placeholder:text-[#b45309]/50 font-semibold outline-none ml-3 text-sm z-10";
+    const iconClass = "h-5 w-5 text-[#b45309]/50 group-focus-within:text-[#d97706] group-focus-within:scale-110 transition-all duration-300 z-10";
 
     if (!mounted) return null;
 
@@ -237,7 +229,7 @@ const ForgotPassword = () => {
             `}</style>
 
             <div 
-                className="min-h-screen lg:h-screen font-poppins relative flex flex-col lg:flex-row overflow-hidden bg-[#0d1c13] selection:bg-[#4ade80]/30"
+                className="min-h-screen lg:h-screen font-poppins relative flex flex-col lg:flex-row overflow-hidden bg-[#1a0f08] selection:bg-[#f59e0b]/30"
                 onMouseMove={handleGlobalMouseMove}
             >
                 {/* Slow-Motion 4K Video Background */}
@@ -245,12 +237,12 @@ const ForgotPassword = () => {
                     <video 
                         autoPlay loop muted playsInline 
                         className="w-full h-full object-cover opacity-80 mix-blend-screen"
-                        poster="https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=2064&auto=format&fit=crop"
+                        poster="https://images.unsplash.com/photo-1610348725531-843dff563e2c?q=80&w=2070&auto=format&fit=crop"
                     >
-                        <source src="https://assets.mixkit.co/videos/preview/mixkit-wheat-field-illuminated-by-the-sun-4131-large.mp4" type="video/mp4" />
+                        <source src="https://assets.mixkit.co/videos/preview/mixkit-water-falling-on-fresh-vegetables-4187-large.mp4" type="video/mp4" />
                     </video>
                     
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#0a1710]/95 via-[#14532d]/80 to-transparent mix-blend-multiply" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#1c0d03]/95 via-[#451a03]/80 to-transparent mix-blend-multiply" />
                     <div className={`absolute inset-0 bg-gradient-to-b lg:bg-gradient-to-r ${themeGradient} to-transparent transition-colors duration-1000`} />
                     <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px]" />
                     
@@ -259,11 +251,11 @@ const ForgotPassword = () => {
                 
                 <FluidParticles mouseX={globalMouseX} mouseY={globalMouseY} />
 
-                {/* Spotlight Global Hover Effect (Lantern Mode) */}
+                {/* Spotlight Global Hover Effect */}
                 <motion.div 
-                    className="absolute inset-0 pointer-events-none z-30 opacity-60"
+                    className="absolute inset-0 pointer-events-none z-30 opacity-50"
                     style={{
-                        background: `radial-gradient(circle 500px at var(--x) var(--y), rgba(251,191,36,0.15), transparent 80%)`,
+                        background: `radial-gradient(circle 600px at var(--x) var(--y), rgba(255,255,255,0.1), transparent 80%)`,
                         "--x": spotlightX,
                         "--y": spotlightY
                     }}
@@ -275,27 +267,27 @@ const ForgotPassword = () => {
                     className="relative z-10 w-full lg:w-[55%] flex flex-col justify-center px-6 pt-8 pb-4 lg:px-24 lg:py-16 h-auto lg:h-full shrink-0"
                 >
                     <div className="flex items-center gap-3 mb-6 lg:mb-10 w-max">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-gradient-to-br from-[#4ade80] to-[#15803d] shadow-[0_4px_20px_rgba(74,222,128,0.4)] border border-white/20">
-                            <Tractor className="h-6 w-6 text-white" />
+                        <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-gradient-to-br from-[#10b981] to-[#047857] shadow-[0_4px_20px_rgba(16,185,129,0.4)] border border-white/20">
+                            <Leaf className="h-6 w-6 text-white" />
                         </div>
                         <div className="flex flex-col justify-center">
                             <span className="text-2xl lg:text-3xl font-black tracking-tight text-white leading-none drop-shadow-md">
-                                Virtual<span className="text-transparent bg-clip-text bg-gradient-to-r from-[#86efac] via-[#4ade80] to-[#22c55e] animate-gradient-text">Mandi</span>
+                                Virtual<span className="text-transparent bg-clip-text bg-gradient-to-r from-[#34d399] via-[#10b981] to-[#059669] animate-gradient-text">Mandi</span>
                             </span>
                         </div>
                     </div>
 
-                    <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-lg border border-white/10 rounded-full px-4 py-2 mb-4 w-max cursor-pointer hover:bg-white/20 transition-colors" onClick={() => navigate('/auth/login')}>
-                        <ArrowLeft className="h-3.5 w-3.5 text-[#86efac]" />
+                    <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-lg border border-white/10 rounded-full px-4 py-2 mb-4 w-max cursor-pointer hover:bg-white/20 transition-colors" onClick={() => navigate('/login')}>
+                        <ArrowLeft className="h-3.5 w-3.5 text-[#fcd34d]" />
                         <span className="text-white/90 text-[10px] lg:text-xs font-black uppercase tracking-[0.2em]">Back to Login</span>
                     </div>
                     
                     <h1 className="text-[32px] sm:text-4xl lg:text-6xl font-black text-white leading-[1.1] tracking-tight drop-shadow-xl max-w-[600px] mt-4">
-                        Secure your <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#86efac] via-[#4ade80] to-[#22c55e] animate-gradient-text">account.</span>
+                        Secure your <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#fcd34d] via-[#f59e0b] to-[#fbbf24] animate-gradient-text">account.</span>
                     </h1>
                     
-                    <p className="mt-4 lg:mt-6 text-white/80 font-medium text-sm lg:text-base max-w-md leading-relaxed drop-shadow-md border-l-2 border-[#4ade80] pl-4">
-                        We'll help you get back into your seller console quickly so you don't miss a single sale.
+                    <p className="mt-4 lg:mt-6 text-white/80 font-medium text-sm lg:text-base max-w-md leading-relaxed drop-shadow-md border-l-2 border-[#f59e0b] pl-4">
+                        We'll help you get back into your account quickly so you can continue shopping fresh produce.
                     </p>
                 </motion.div>
 
@@ -318,18 +310,18 @@ const ForgotPassword = () => {
                                 {step === 0 && (
                                     <motion.div key="step0" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="relative z-10">
                                         <div className="text-center mb-8">
-                                            <div className="h-14 w-14 bg-[#dcfce7] text-[#166534] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-inner border border-[#bbf7d0]">
+                                            <div className="h-14 w-14 bg-[#fef3c7] text-[#b45309] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-inner border border-[#fde68a]">
                                                 <Mail className="h-7 w-7" />
                                             </div>
-                                            <h2 className="text-3xl font-black text-[#14532d] tracking-tight">Recover</h2>
-                                            <p className="text-[#166534] text-sm mt-2 font-semibold">Enter your email to receive a code</p>
+                                            <h2 className="text-3xl font-black text-[#451a03] tracking-tight">Recover</h2>
+                                            <p className="text-[#92400e] text-sm mt-2 font-semibold">Enter your email to receive a code</p>
                                         </div>
 
                                         <form onSubmit={handleSendResetCode} className="space-y-6">
                                             <div className={inputContainerClass}>
-                                                <Mail className={iconClass} />
-                                                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="farmer@punjab.farm" required className={inputClass} />
-                                                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-[2px] bg-gradient-to-r from-[#86efac] to-[#22c55e] group-focus-within:w-full transition-all duration-500 ease-out" />
+                                                <User className={iconClass} />
+                                                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="buyer@example.com" required className={inputClass} />
+                                                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-[2px] bg-gradient-to-r from-[#fcd34d] to-[#f59e0b] group-focus-within:w-full transition-all duration-500 ease-out" />
                                             </div>
 
                                             <div className="pt-2 perspective-[500px]">
@@ -347,7 +339,7 @@ const ForgotPassword = () => {
                                                         if (btn.getElementsByClassName("ripple")[0]) btn.getElementsByClassName("ripple")[0].remove();
                                                         btn.appendChild(circle);
                                                     }}
-                                                    className={`w-full h-[52px] rounded-xl bg-gradient-to-r from-[#16a34a] to-[#15803d] text-white font-black text-base tracking-wide shadow-[0_8px_20px_rgba(22,163,74,0.4)] flex items-center justify-center overflow-hidden relative ${(!email) ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                                                    className={`w-full h-[52px] rounded-xl bg-gradient-to-r from-[#d97706] to-[#b45309] text-white font-black text-base tracking-wide shadow-[0_8px_20px_rgba(217,119,6,0.4)] flex items-center justify-center overflow-hidden relative ${(!email) ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
                                                 >
                                                     <div className="absolute inset-0 bg-white/20 opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                                                     <span className="relative z-10 flex items-center gap-2 pointer-events-none">
@@ -365,12 +357,12 @@ const ForgotPassword = () => {
                                             <div className="h-14 w-14 bg-[#dcfce7] text-[#166534] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-inner border border-[#bbf7d0]">
                                                 <ShieldCheck className="h-7 w-7" />
                                             </div>
-                                            <h2 className="text-3xl font-black text-[#14532d] tracking-tight">Verify</h2>
-                                            <p className="text-[#166534] text-xs mt-2 font-semibold">Enter the 6-digit code sent to <br/><span className="text-[#14532d]">{email}</span></p>
+                                            <h2 className="text-3xl font-black text-[#451a03] tracking-tight">Verify</h2>
+                                            <p className="text-[#92400e] text-xs mt-2 font-semibold">Enter the 6-digit code sent to <br/><span className="text-[#451a03]">{email}</span></p>
                                         </div>
                                         <div className="space-y-6">
                                             <OtpInput onComplete={handleVerifyOtp} />
-                                            <p className="text-center text-[11px] font-bold text-[#166534]/70 pt-2 cursor-pointer hover:text-[#15803d]" onClick={() => setStep(0)}>
+                                            <p className="text-center text-[11px] font-bold text-[#92400e]/70 pt-2 cursor-pointer hover:text-[#d97706]" onClick={() => setStep(0)}>
                                                 Wrong Email? Try Again
                                             </p>
                                         </div>
@@ -383,25 +375,25 @@ const ForgotPassword = () => {
                                             <div className="h-14 w-14 bg-[#fef08a] text-[#a16207] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-inner border border-[#fde047]">
                                                 <Lock className="h-7 w-7" />
                                             </div>
-                                            <h2 className="text-3xl font-black text-[#14532d] tracking-tight">Secure</h2>
-                                            <p className="text-[#166534] text-sm mt-2 font-semibold">Create a strong new password</p>
+                                            <h2 className="text-3xl font-black text-[#451a03] tracking-tight">Secure</h2>
+                                            <p className="text-[#92400e] text-sm mt-2 font-semibold">Create a strong new password</p>
                                         </div>
                                         <form onSubmit={handleResetPassword} className="space-y-4">
                                             <div className={inputContainerClass}>
                                                 <Lock className={iconClass} />
                                                 <input id="new-password" type="password" placeholder="New Password" required className={inputClass} />
-                                                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-[2px] bg-gradient-to-r from-[#86efac] to-[#22c55e] group-focus-within:w-full transition-all duration-500 ease-out" />
+                                                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-[2px] bg-gradient-to-r from-[#fcd34d] to-[#f59e0b] group-focus-within:w-full transition-all duration-500 ease-out" />
                                             </div>
                                             <div className={inputContainerClass}>
                                                 <Lock className={iconClass} />
                                                 <input id="confirm-password" type="password" placeholder="Confirm Password" required className={inputClass} />
-                                                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-[2px] bg-gradient-to-r from-[#86efac] to-[#22c55e] group-focus-within:w-full transition-all duration-500 ease-out" />
+                                                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-[2px] bg-gradient-to-r from-[#fcd34d] to-[#f59e0b] group-focus-within:w-full transition-all duration-500 ease-out" />
                                             </div>
                                             <div className="pt-4 perspective-[500px]">
                                                 <motion.button
                                                     ref={btnRef} onMouseMove={handleBtnMouseMove} onMouseLeave={handleBtnMouseLeave} style={{ x: btnXSpring, y: btnYSpring }} whileTap={{ scale: 0.95 }}
                                                     type="submit" disabled={isLoading}
-                                                    className="w-full h-[52px] rounded-xl bg-gradient-to-r from-[#16a34a] to-[#15803d] text-white font-black text-base tracking-wide shadow-[0_8px_20px_rgba(22,163,74,0.4)] flex items-center justify-center relative overflow-hidden"
+                                                    className="w-full h-[52px] rounded-xl bg-gradient-to-r from-[#d97706] to-[#b45309] text-white font-black text-base tracking-wide shadow-[0_8px_20px_rgba(217,119,6,0.4)] flex items-center justify-center relative overflow-hidden"
                                                 >
                                                     <span className="relative z-10 flex items-center gap-2 pointer-events-none">
                                                         {isLoading ? <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> : <>Reset Password <ArrowRight className="h-4 w-4" /></>}

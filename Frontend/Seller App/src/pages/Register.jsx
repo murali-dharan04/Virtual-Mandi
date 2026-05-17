@@ -1,334 +1,524 @@
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
-import {
-    User, Mail, Phone, MapPin, Lock,
-    ArrowRight, ArrowLeft, CheckCircle2,
-    RefreshCw, MessageSquare
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-    Select, SelectContent, SelectItem,
-    SelectTrigger, SelectValue
-} from "@/components/ui/select";
-import { sellerApi } from "@/lib/api";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { Eye, EyeOff, User, Mail, Lock, Leaf, Tractor, Phone, MapPin, Compass, ArrowRight, ArrowLeft } from "lucide-react";
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, useAnimationFrame } from "framer-motion";
 import PageTransition from "@/components/PageTransition";
-import OtpInput from "@/components/OtpInput";
-import AuthLayout from "@/components/AuthLayout";
+import { sellerApi } from "@/lib/api";
+import { toast } from "sonner";
 
-import { statesData } from "@/data/statesData";
+const fadeReveal = {
+    hidden: { opacity: 0, filter: "blur(10px)", y: 10 },
+    show: { opacity: 1, filter: "blur(0px)", y: 0, transition: { duration: 0.7, ease: "easeOut" } }
+};
 
-const Register = () => {
-    const navigate = useNavigate();
-    const [step, setStep] = useState(0);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState("");
+const slideUpSnappy = {
+    hidden: { opacity: 0, y: 40 },
+    show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 25 } }
+};
 
-    const [formData, setFormData] = useState({
-        name: "", email: "", mobile: "", whatsapp: "",
-        state: "", district: "", password: "", confirmPassword: "",
-        category: "vegetables", language: "english",
-        whatsappSameAsMobile: false
+// Fluid Particles Component (Warm pollen particles for Seller)
+const FluidParticles = ({ mouseX, mouseY }) => {
+    const numParticles = 30;
+    const particles = useRef(
+        Array.from({ length: numParticles }).map(() => ({
+            x: Math.random() * window.innerWidth,
+            y: Math.random() * window.innerHeight,
+            vx: (Math.random() - 0.5) * 1,
+            vy: (Math.random() - 0.5) * 1 - 0.5,
+            size: Math.random() * 8 + 3,
+        }))
+    );
+
+    const [renders, setRenders] = useState(0);
+
+    useAnimationFrame(() => {
+        const mx = mouseX.get();
+        const my = mouseY.get();
+        const repelRadius = 160;
+        const repelForce = 6;
+
+        particles.current.forEach(p => {
+            const dx = p.x - mx;
+            const dy = p.y - my;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (dist < repelRadius && dist > 0) {
+                const force = (repelRadius - dist) / repelRadius;
+                p.vx += (dx / dist) * force * repelForce;
+                p.vy += (dy / dist) * force * repelForce;
+            }
+
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vx *= 0.92;
+            p.vy *= 0.92;
+            p.x += Math.sin(Date.now() / 2000 + p.size) * 0.5;
+            p.y -= 0.6;
+
+            if (p.x < 0) p.x = window.innerWidth;
+            if (p.x > window.innerWidth) p.x = 0;
+            if (p.y < 0) p.y = window.innerHeight;
+            if (p.y > window.innerHeight) p.y = 0;
+        });
+        setRenders(r => r + 1);
     });
 
-    const [location, setLocation] = useState({ lat: null, lng: null });
-
-    useEffect(() => {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (pos) => setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-                () => console.log("Location access denied")
-            );
-        }
-    }, []);
-
-    const handleChange = (field, value) => {
-        setFormData(prev => {
-            const newData = { ...prev, [field]: value };
-            if (field === 'mobile' && prev.whatsappSameAsMobile) {
-                newData.whatsapp = value;
-            }
-            if (field === 'whatsappSameAsMobile') {
-                newData.whatsapp = value ? prev.mobile : "";
-            }
-            // Reset district when state changes
-            if (field === 'state') {
-                newData.district = "";
-            }
-            return newData;
-        });
-    };
-
-    const handleRegister = async () => {
-        if (!formData.password || !formData.confirmPassword) {
-            setError("Both password fields are required");
-            return;
-        }
-        if (formData.password !== formData.confirmPassword) {
-            setError("Passwords do not match");
-            return;
-        }
-        setIsLoading(true);
-        setError("");
-        try {
-            const res = await sellerApi.register(
-                formData.name,
-                formData.email,
-                formData.password,
-                location.lat ? `${location.lat},${location.lng}` : null,
-                formData
-            );
-            if (res.access_token) {
-                // Success: Redirect to Dashboard directly
-                navigate("/dashboard");
-            } else if (res.message || res.user_id) {
-                // Fallback if token not returned for some reason
-                navigate("/auth/login");
-            } else {
-                setError(res.error || "Registration failed");
-            }
-        } catch (err) {
-            setError("Network error");
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleVerifyOtp = async (otp) => {
-        setIsLoading(true);
-        setError("");
-        try {
-            // Placeholder for OTP verification logic
-            console.log("Verifying OTP:", otp);
-            navigate("/dashboard");
-        } catch (err) {
-            setError("Invalid OTP");
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-
-
-    const inputClass = "h-14 rounded-2xl border-2 border-slate-100 bg-slate-50/50 focus:border-[#2E7D32] transition-all font-medium text-slate-900 placeholder:text-slate-300";
-    const labelClass = "text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1";
-    const buttonClass = "w-full h-16 text-lg font-black uppercase rounded-2xl bg-[#2E7D32] hover:bg-[#1B5E20] text-white shadow-lg hover:shadow-[#2E7D32]/20 active:translate-y-0.5 transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed";
-
-    const StepIndicator = () => (
-        <div className="flex items-center justify-between mb-8 px-2">
-            {[0, 1, 2].map((i) => (
-                <div key={i} className="flex items-center flex-1 last:flex-none">
-                    <div className={`h-10 w-10 rounded-2xl flex items-center justify-center text-sm font-black transition-all ${step === i ? 'bg-[#2E7D32] text-white shadow-lg' :
-                        step > i ? 'bg-[#E8F5E9] text-[#2E7D32]' : 'bg-slate-100 text-slate-400'
-                        }`}>
-                        {step > i ? <CheckCircle2 className="h-5 w-5" /> : i + 1}
-                    </div>
-                    {i < 2 && (
-                        <div className={`h-1 flex-1 mx-2 rounded-full transition-all ${step > i ? 'bg-[#2E7D32]' : 'bg-slate-100'
-                            }`} />
-                    )}
-                </div>
+    return (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+            {particles.current.map((p, i) => (
+                <div
+                    key={i}
+                    className="absolute rounded-full bg-[#fbbf24]/50 mix-blend-screen blur-[3px]"
+                    style={{
+                        width: p.size + "px",
+                        height: p.size + "px",
+                        transform: `translate(${p.x}px, ${p.y}px)`,
+                    }}
+                />
             ))}
         </div>
     );
+};
+
+const Register = () => {
+    const navigate = useNavigate();
+    const [step, setStep] = useState(0); 
+
+    // Form inputs
+    const [name, setName] = useState("");
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [location, setLocation] = useState("");
+    const [mobile, setMobile] = useState("");
+    const [whatsapp, setWhatsapp] = useState("");
+    const [district, setDistrict] = useState("");
+    const [state, setState] = useState("");
+
+    const [showPw, setShowPw] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [mounted, setMounted] = useState(false);
+    const [weatherCond, setWeatherCond] = useState("clear");
+
+    const globalMouseX = useMotionValue(-1000);
+    const globalMouseY = useMotionValue(-1000);
+    const spotlightX = useTransform(globalMouseX, x => `${x}px`);
+    const spotlightY = useTransform(globalMouseY, y => `${y}px`);
+
+    useEffect(() => {
+        setMounted(true);
+        const fetchWeather = async () => {
+            try {
+                const res = await fetch("https://wttr.in/?format=j1");
+                const data = await res.json();
+                const desc = data.current_condition[0].weatherDesc[0].value.toLowerCase();
+                if (desc.includes("rain") || desc.includes("shower") || desc.includes("drizzle")) {
+                    setWeatherCond("rain");
+                } else {
+                    setWeatherCond("clear");
+                }
+            } catch (err) {
+                setWeatherCond("clear");
+            }
+        };
+        fetchWeather();
+    }, []);
+
+    // 3D Tilt Logic
+    const cardRef = useRef(null);
+    const x = useMotionValue(0);
+    const y = useMotionValue(0);
+    const mouseXSpring = useSpring(x, { stiffness: 150, damping: 20 });
+    const mouseYSpring = useSpring(y, { stiffness: 150, damping: 20 });
+    const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["8deg", "-8deg"]);
+    const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-8deg", "8deg"]);
+    const glareX = useTransform(mouseXSpring, [-0.5, 0.5], ["0%", "100%"]);
+    const glareY = useTransform(mouseYSpring, [-0.5, 0.5], ["0%", "100%"]);
+
+    const handleCardMouseMove = (e) => {
+        if (!cardRef.current) return;
+        const rect = cardRef.current.getBoundingClientRect();
+        x.set((e.clientX - rect.left) / rect.width - 0.5);
+        y.set((e.clientY - rect.top) / rect.height - 0.5);
+    };
+    const handleCardMouseLeave = () => { x.set(0); y.set(0); };
+
+    // Magnetic Button Logic
+    const btnRef = useRef(null);
+    const btnX = useMotionValue(0);
+    const btnY = useMotionValue(0);
+    const btnXSpring = useSpring(btnX, { stiffness: 150, damping: 15 });
+    const btnYSpring = useSpring(btnY, { stiffness: 150, damping: 15 });
+
+    const handleBtnMouseMove = (e) => {
+        if (!btnRef.current) return;
+        const rect = btnRef.current.getBoundingClientRect();
+        btnX.set((e.clientX - rect.left - rect.width / 2) * 0.3);
+        btnY.set((e.clientY - rect.top - rect.height / 2) * 0.3);
+    };
+    const handleBtnMouseLeave = () => { btnX.set(0); btnY.set(0); };
+
+    // Spotlight Global Hover
+    const handleGlobalMouseMove = (e) => {
+        globalMouseX.set(e.clientX);
+        globalMouseY.set(e.clientY);
+    };
+
+    const currentMonth = new Date().getMonth();
+    const isAutumnOrWinter = currentMonth >= 8 || currentMonth <= 1;
+    const themeGradient = isAutumnOrWinter 
+        ? "from-[#1a3622]/95 via-[#2b5936]/70"
+        : "from-[#0f3b21]/95 via-[#1b5e33]/70";
+
+    const handleNextStep = (e) => {
+        e.preventDefault();
+        if (!name || !email || !password || !mobile) {
+            toast.error("All fields are required");
+            return;
+        }
+        if (password.length < 6) {
+            toast.error("Password must be at least 6 characters");
+            return;
+        }
+        if (!/^[6-9]\d{9}$/.test(mobile)) {
+            toast.error("Enter a valid 10-digit Indian mobile number");
+            return;
+        }
+        setStep(1);
+    };
+
+    const handleRegisterSubmit = async (e) => {
+        e.preventDefault();
+        if (!location || !mobile || !district || !state) {
+            toast.error("Please fill in all regional/profile fields");
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const res = await sellerApi.register(name, email, password, location, {
+                mobile,
+                whatsapp: whatsapp || mobile,
+                district,
+                state,
+                lat: 19.9975, // default Nashik fallback region coordinates
+                lon: 73.7898
+            });
+
+            if (res.access_token || res.user) {
+                toast.success("Grower account created successfully!");
+                navigate("/dashboard");
+            } else {
+                toast.error(res.error || "Failed to create account. Please try again.");
+            }
+        } catch (err) {
+            toast.error("Failed to connect to backend server.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const inputContainerClass = "flex items-center w-full h-[50px] rounded-xl bg-white/60 backdrop-blur-md px-4 transition-all duration-300 focus-within:bg-white focus-within:shadow-[0_4px_25px_rgba(74,222,128,0.25)] border border-white/50 focus-within:border-[#4ade80]/60 group relative overflow-hidden";
+    const inputClass = "flex-1 bg-transparent border-none text-[#14532d] placeholder:text-[#166534]/50 font-semibold outline-none ml-3 text-sm z-10";
+    const iconClass = "h-5 w-5 text-[#166534]/50 group-focus-within:text-[#15803d] group-focus-within:scale-110 transition-all duration-300 z-10";
+
+    if (!mounted) return null;
 
     return (
         <PageTransition>
-            <AuthLayout
-                title="Create Account"
-                subtitle="Join Bharat's biggest digital Mandi."
+            <style>{`
+                @keyframes gradientFlow {
+                    0% { background-position: 0% 50%; }
+                    50% { background-position: 100% 50%; }
+                    100% { background-position: 0% 50%; }
+                }
+                .animate-gradient-text {
+                    background-size: 200% auto;
+                    animation: gradientFlow 4s ease infinite;
+                }
+                .ripple {
+                    position: absolute;
+                    border-radius: 50%;
+                    transform: scale(0);
+                    animation: ripple 0.6s linear;
+                    background-color: rgba(255, 255, 255, 0.4);
+                }
+                @keyframes ripple { to { transform: scale(4); opacity: 0; } }
+                .rain-overlay {
+                    background-image: url('data:image/svg+xml;utf8,<svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><line x1="10" y1="0" x2="10" y2="10" stroke="rgba(255,255,255,0.4)" stroke-width="1" stroke-linecap="round" /></svg>');
+                    background-size: 30px 40px;
+                    animation: rain 0.8s linear infinite;
+                }
+                @keyframes rain { 0% { background-position: 0% 0%; } 100% { background-position: 20% 100%; } }
+            `}</style>
+
+            <div 
+                className="min-h-screen lg:h-screen font-poppins relative flex flex-col lg:flex-row overflow-hidden bg-[#0d1c13] selection:bg-[#4ade80]/30"
+                onMouseMove={handleGlobalMouseMove}
             >
-                {step < 3 && <StepIndicator />}
-
-                <div className="relative min-h-[400px]">
-                    <AnimatePresence mode="wait">
-                        {step === 0 && (
-                            <motion.div
-                                key="step0"
-                                initial={{ opacity: 0, x: 20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -20 }}
-                                className="space-y-5"
-                            >
-                                <div className="space-y-2">
-                                    <Label className={labelClass}>Full Name</Label>
-                                    <Input value={formData.name} onChange={(e) => handleChange('name', e.target.value)} placeholder="Farmer Ram" className={inputClass} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className={labelClass}>Mobile Number</Label>
-                                    <Input 
-                                        type="tel"
-                                        value={formData.mobile} 
-                                        onChange={(e) => {
-                                            const val = e.target.value.replace(/\D/g, '').slice(0, 10);
-                                            handleChange('mobile', val);
-                                        }} 
-                                        placeholder="9876543210" 
-                                        className={inputClass} 
-                                    />
-                                </div>
-                                <div className="flex items-center gap-4 bg-slate-50 p-5 rounded-2xl border-2 border-slate-100 transition-all hover:bg-slate-100/50">
-                                    <Checkbox
-                                        id="whatsapp-sync"
-                                        checked={formData.whatsappSameAsMobile}
-                                        onCheckedChange={(val) => handleChange('whatsappSameAsMobile', val)}
-                                        className="h-6 w-6 border-2 border-slate-200 data-[state=checked]:bg-[#2E7D32] data-[state=checked]:border-[#2E7D32] transition-all"
-                                    />
-                                    <label htmlFor="whatsapp-sync" className="text-sm font-black text-slate-500 cursor-pointer select-none leading-tight">
-                                        WhatsApp Number is same as mobile
-                                    </label>
-                                </div>
-                                {!formData.whatsappSameAsMobile && (
-                                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="space-y-2">
-                                        <Label className={labelClass}>WhatsApp Number</Label>
-                                        <Input value={formData.whatsapp} onChange={(e) => handleChange('whatsapp', e.target.value)} placeholder="9876543210" className={inputClass} />
-                                    </motion.div>
-                                )}
-                                <Button
-                                    onClick={() => {
-                                        if (!formData.name || formData.mobile.length !== 10 || (!formData.whatsappSameAsMobile && formData.whatsapp.length !== 10)) {
-                                            setError("Please enter a valid 10-digit mobile number");
-                                            return;
-                                        }
-                                        setError("");
-                                        setStep(1);
-                                    }}
-                                    disabled={!formData.name || formData.mobile.length !== 10}
-                                    className={buttonClass}
-                                >
-                                    Continue <ArrowRight className="ml-2 h-5 w-5" />
-                                </Button>
-                                {error && step === 0 && <p className="text-xs font-bold text-red-500 text-center mt-2">{error}</p>}
-                            </motion.div>
-                        )}
-
-                        {step === 1 && (
-                            <motion.div
-                                key="step1"
-                                initial={{ opacity: 0, x: 20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -20 }}
-                                className="space-y-5"
-                            >
-                                <div className="space-y-2">
-                                    <Label className={labelClass}>Email *</Label>
-                                    <Input type="email" value={formData.email} onChange={(e) => handleChange('email', e.target.value)} placeholder="ram@example.com" className={inputClass} />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label className={labelClass}>State *</Label>
-                                        <Select onValueChange={(val) => handleChange('state', val)} value={formData.state}>
-                                            <SelectTrigger className={inputClass}>
-                                                <SelectValue placeholder="Select State" />
-                                            </SelectTrigger>
-                                            <SelectContent className="rounded-3xl border-2 border-slate-100 shadow-xl shadow-slate-200/50 text-slate-900 bg-white z-50 p-2 max-h-64">
-                                                {Object.keys(statesData).sort().map(s => <SelectItem key={s} value={s} className="font-semibold cursor-pointer rounded-xl focus:bg-[#E8F5E9] focus:text-[#2E7D32] py-3 transition-colors">{s}</SelectItem>)}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className={labelClass}>District *</Label>
-                                        <Select onValueChange={(val) => handleChange('district', val)} value={formData.district} disabled={!formData.state}>
-                                            <SelectTrigger className={inputClass}>
-                                                <SelectValue placeholder={formData.state ? "Select District" : "Wait for State"} />
-                                            </SelectTrigger>
-                                            <SelectContent className="rounded-3xl border-2 border-slate-100 shadow-xl shadow-slate-200/50 text-slate-900 bg-white z-50 p-2 max-h-64">
-                                                {formData.state && statesData[formData.state].sort().map(d => <SelectItem key={d} value={d} className="font-semibold cursor-pointer rounded-xl focus:bg-[#E8F5E9] focus:text-[#2E7D32] py-3 transition-colors">{d}</SelectItem>)}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                </div>
-                                <div className="flex gap-4 mt-4">
-                                    <Button variant="outline" onClick={() => setStep(0)} className="h-16 w-20 rounded-2xl border-2 hover:bg-slate-50 transition-colors"><ArrowLeft /></Button>
-                                    <Button
-                                        onClick={() => {
-                                            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                                            if (!emailRegex.test(formData.email)) {
-                                                setError("Please enter a valid email address");
-                                                return;
-                                            }
-                                            if (!formData.state || !formData.district) {
-                                                setError("Please select your state and district");
-                                                return;
-                                            }
-                                            setError("");
-                                            setStep(2);
-                                        }}
-                                        disabled={!formData.email || !formData.state || !formData.district}
-                                        className={`flex-1 ${buttonClass}`}
-                                    >
-                                        Continue
-                                    </Button>
-                                </div>
-                                {error && step === 1 && <p className="text-xs font-bold text-red-500 text-center mt-4">{error}</p>}
-                            </motion.div>
-                        )}
-
-                        {step === 2 && (
-                            <motion.div
-                                key="step2"
-                                initial={{ opacity: 0, x: 20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -20 }}
-                                className="space-y-5"
-                            >
-                                <div className="space-y-2">
-                                    <Label className={labelClass}>Secure Password</Label>
-                                    <Input type="password" value={formData.password} onChange={(e) => handleChange('password', e.target.value)} placeholder="••••••••" className={inputClass} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className={labelClass}>Confirm Password</Label>
-                                    <Input type="password" value={formData.confirmPassword} onChange={(e) => handleChange('confirmPassword', e.target.value)} placeholder="••••••••" className={inputClass} />
-                                </div>
-                                {error && <p className="text-xs font-bold text-red-500 text-center">{error}</p>}
-                                <div className="flex gap-4 mt-6">
-                                    <Button variant="outline" onClick={() => { setError(""); setStep(1); }} className="h-16 w-20 rounded-2xl border-2 hover:bg-slate-50 transition-colors"><ArrowLeft /></Button>
-                                    <Button
-                                        onClick={handleRegister}
-                                        disabled={isLoading || !formData.password || formData.password !== formData.confirmPassword}
-                                        className={`flex-1 ${buttonClass}`}
-                                    >
-                                        {isLoading ? <RefreshCw className="animate-spin h-6 w-6" /> : "Complete Register"}
-                                    </Button>
-                                </div>
-                            </motion.div>
-                        )}
-
-                        {step === 3 && (
-                            <motion.div
-                                key="otp"
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                className="space-y-8"
-                            >
-                                <div className="text-center">
-                                    <div className="h-20 w-20 bg-[#E8F5E9] text-[#2E7D32] rounded-3xl flex items-center justify-center mx-auto mb-4">
-                                        <MessageSquare className="h-10 w-10" />
-                                    </div>
-                                    <h3 className="text-2xl font-black text-[#2E7D32] font-poppins">Verify It's You</h3>
-                                    <p className="text-slate-500 font-medium">Enter the 6-digit code sent to your mobile.</p>
-                                </div>
-                                <OtpInput onComplete={handleVerifyOtp} />
-                                {error && <p className="text-xs font-bold text-red-500 text-center">{error}</p>}
-                                <Button onClick={() => setStep(0)} variant="link" className="w-full text-slate-400 font-bold uppercase tracking-widest text-[10px]">Change Mobile Number</Button>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-
-                    <div className="mt-10 text-center border-t border-slate-100 pt-8 pb-4">
-                        <p className="text-slate-400 text-sm font-medium">Already have an account?</p>
-                        <button
-                            onClick={() => navigate('/auth/login')}
-                            className="text-[#FF9800] font-black uppercase tracking-wider mt-1 hover:underline underline-offset-8 transition-all hover:scale-105 active:scale-95 inline-block"
-                        >
-                            Sign In Now
-                        </button>
-                    </div>
+                {/* Slow-Motion 4K Video Background */}
+                <div className="absolute inset-0 z-0 bg-black">
+                    <video 
+                        autoPlay loop muted playsInline 
+                        className="w-full h-full object-cover opacity-80 mix-blend-screen"
+                        poster="https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=2064&auto=format&fit=crop"
+                    >
+                        <source src="https://assets.mixkit.co/videos/preview/mixkit-wheat-field-illuminated-by-the-sun-4131-large.mp4" type="video/mp4" />
+                    </video>
+                    
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#0a1710]/95 via-[#14532d]/80 to-transparent mix-blend-multiply" />
+                    <div className={`absolute inset-0 bg-gradient-to-b lg:bg-gradient-to-r ${themeGradient} to-transparent transition-colors duration-1000`} />
+                    <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px]" />
+                    
+                    {weatherCond === "rain" && <div className="absolute inset-0 rain-overlay opacity-30 z-10 pointer-events-none" />}
                 </div>
-            </AuthLayout>
+                
+                <FluidParticles mouseX={globalMouseX} mouseY={globalMouseY} />
+
+                {/* Spotlight Global Hover Effect */}
+                <motion.div 
+                    className="absolute inset-0 pointer-events-none z-30 opacity-60"
+                    style={{
+                        background: `radial-gradient(circle 500px at var(--x) var(--y), rgba(251,191,36,0.15), transparent 80%)`,
+                        "--x": spotlightX,
+                        "--y": spotlightY
+                    }}
+                />
+
+                {/* Left Side: Branding */}
+                <motion.div 
+                    variants={fadeReveal} initial="hidden" animate="show"
+                    className="relative z-10 w-full lg:w-[50%] flex flex-col justify-center px-6 pt-8 pb-4 lg:px-20 lg:py-16 h-auto lg:h-full shrink-0"
+                >
+                    <div className="flex items-center gap-3 mb-6 lg:mb-10 w-max">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-gradient-to-br from-[#4ade80] to-[#15803d] shadow-[0_4px_20px_rgba(74,222,128,0.4)] border border-white/20">
+                            <Tractor className="h-6 w-6 text-white" />
+                        </div>
+                        <div className="flex flex-col justify-center">
+                            <span className="text-2xl lg:text-3xl font-black tracking-tight text-white leading-none drop-shadow-md">
+                                Virtual<span className="text-transparent bg-clip-text bg-gradient-to-r from-[#86efac] via-[#4ade80] to-[#22c55e] animate-gradient-text">Mandi</span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-lg border border-white/10 rounded-full px-4 py-2 mb-4 w-max">
+                        <Leaf className="h-3.5 w-3.5 text-[#86efac]" />
+                        <span className="text-white/90 text-[10px] lg:text-xs font-black uppercase tracking-[0.2em]">Seller Console Registration</span>
+                    </div>
+                    
+                    <h1 className="text-[32px] sm:text-4xl lg:text-5xl font-black text-white leading-[1.1] tracking-tight drop-shadow-xl max-w-[500px]">
+                        Grow your business, directly from your <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#86efac] via-[#4ade80] to-[#22c55e] animate-gradient-text">farm.</span>
+                    </h1>
+                    
+                    <p className="mt-4 lg:mt-6 text-white/80 font-medium text-sm lg:text-base max-w-md leading-relaxed drop-shadow-md border-l-2 border-[#4ade80] pl-4">
+                        Join our network of 10,000+ local producers. Receive priority pricing alerts, list your produce in 3 clicks, and get instant digital wallet payouts.
+                    </p>
+                </motion.div>
+
+                {/* Right Side: 3D Tilt Card */}
+                <div className="relative z-20 w-full lg:w-[50%] flex items-center justify-center px-4 pb-8 lg:p-12 h-auto lg:h-full flex-1 perspective-[1500px] overflow-y-auto">
+                    <motion.div 
+                        variants={slideUpSnappy} initial="hidden" animate="show"
+                        ref={cardRef} onMouseMove={handleCardMouseMove} onMouseLeave={handleCardMouseLeave}
+                        style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
+                        className="w-full max-w-[440px] relative my-auto py-6"
+                    >
+                        <div className="w-full bg-white/80 backdrop-blur-3xl rounded-[2rem] p-6 sm:p-8 shadow-[0_20px_60px_rgba(0,0,0,0.4)] border border-white/40 overflow-hidden">
+                            <motion.div 
+                                className="absolute inset-0 pointer-events-none mix-blend-overlay z-20 opacity-50"
+                                style={{ background: `radial-gradient(circle at var(--x, 50%) var(--y, 50%), rgba(255,255,255,0.9) 0%, transparent 70%)`, WebkitMaskImage: "linear-gradient(white, black)" }}
+                                animate={{ "--x": glareX.get(), "--y": glareY.get() }}
+                            />
+
+                            <div className="text-center mb-6 relative z-10">
+                                <h2 className="text-3xl font-black text-[#14532d] tracking-tight">Register</h2>
+                                <p className="text-[#166534] text-xs mt-1.5 font-semibold">Join Virtual Mandi as a verified grower</p>
+                            </div>
+
+                            {/* Required legend */}
+                            <div className="flex items-center justify-end gap-1.5 mb-3 relative z-10">
+                                <span className="inline-flex items-center gap-1 bg-red-50 border border-red-200 rounded-full px-2.5 py-1">
+                                    <span className="text-red-500 font-black text-sm leading-none">✱</span>
+                                    <span className="text-[10px] font-extrabold text-red-500 uppercase tracking-wide">Required</span>
+                                </span>
+                            </div>
+
+                            <AnimatePresence mode="wait">
+                                {step === 0 ? (
+                                    <motion.form 
+                                        key="step0" onSubmit={handleNextStep}
+                                        initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
+                                        className="space-y-3 relative z-10"
+                                    >
+                                        <div className="space-y-1">
+                                            <label className="flex items-center gap-1.5 text-[12.5px] font-extrabold text-[#14532d] ml-1">
+                                                Full Name
+                                                <span className="text-red-500 text-[18px] font-black leading-none relative -top-0.5">*</span>
+                                            </label>
+                                            <div className={inputContainerClass}>
+                                                <User className={iconClass} />
+                                                <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Full Name" required className={inputClass} />
+                                                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-[2px] bg-gradient-to-r from-[#86efac] to-[#22c55e] group-focus-within:w-full transition-all duration-500 ease-out" />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-1">
+                                            <label className="flex items-center gap-1.5 text-[12.5px] font-extrabold text-[#14532d] ml-1">
+                                                Email Address
+                                                <span className="text-red-500 text-[18px] font-black leading-none relative -top-0.5">*</span>
+                                            </label>
+                                            <div className={inputContainerClass}>
+                                                <Mail className={iconClass} />
+                                                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="farmer@harvest.com" required className={inputClass} />
+                                                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-[2px] bg-gradient-to-r from-[#86efac] to-[#22c55e] group-focus-within:w-full transition-all duration-500 ease-out" />
+                                            </div>
+                                        </div>
+
+                                        {/* Mobile Number Field */}
+                                        <div className="space-y-1">
+                                            <label className="flex items-center gap-1.5 text-[12.5px] font-extrabold text-[#14532d] ml-1">
+                                                Mobile Number
+                                                <span className="text-red-500 text-[18px] font-black leading-none relative -top-0.5">*</span>
+                                            </label>
+                                            <div className={inputContainerClass}>
+                                                <Phone className={iconClass} />
+                                                <span className="text-[#166534]/60 font-bold text-sm z-10 mr-1 select-none">+91</span>
+                                                <input
+                                                    type="tel"
+                                                    value={mobile}
+                                                    onChange={(e) => setMobile(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                                                    placeholder="Mobile Number"
+                                                    required
+                                                    maxLength={10}
+                                                    className={inputClass}
+                                                />
+                                                {mobile.length === 10 && /^[6-9]\d{9}$/.test(mobile) && (
+                                                    <svg className="h-4 w-4 text-[#16a34a] shrink-0 z-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+                                                )}
+                                                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-[2px] bg-gradient-to-r from-[#86efac] to-[#22c55e] group-focus-within:w-full transition-all duration-500 ease-out" />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-1">
+                                            <label className="flex items-center gap-1.5 text-[12.5px] font-extrabold text-[#14532d] ml-1">
+                                                Password
+                                                <span className="text-red-500 text-[18px] font-black leading-none relative -top-0.5">*</span>
+                                            </label>
+                                            <div className={inputContainerClass}>
+                                                <Lock className={iconClass} />
+                                                <input type={showPw ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password (min 6 chars)" required className={inputClass} />
+                                                <button type="button" onClick={() => setShowPw(!showPw)} className="ml-2 text-[#166534]/50 hover:text-[#15803d] shrink-0 transition-colors z-10">
+                                                    {showPw ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                                </button>
+                                                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-[2px] bg-gradient-to-r from-[#86efac] to-[#22c55e] group-focus-within:w-full transition-all duration-500 ease-out" />
+                                            </div>
+                                        </div>
+
+                                        <div className="pt-1 perspective-[500px]">
+                                            <motion.button
+                                                ref={btnRef} onMouseMove={handleBtnMouseMove} onMouseLeave={handleBtnMouseLeave} style={{ x: btnXSpring, y: btnYSpring }} whileTap={{ scale: 0.95 }}
+                                                type="submit" disabled={!name || !email || !password || !mobile}
+                                                className={`w-full h-[52px] rounded-xl bg-gradient-to-r from-[#16a34a] to-[#15803d] text-white font-black text-base tracking-wide shadow-[0_8px_20px_rgba(22,163,74,0.4)] flex items-center justify-center overflow-hidden relative ${(!name || !email || !password || !mobile) ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                                            >
+                                                <span className="relative z-10 flex items-center gap-2 pointer-events-none">
+                                                    Continue <ArrowRight className="h-4 w-4" />
+                                                </span>
+                                            </motion.button>
+                                        </div>
+
+                                        <p className="text-center text-[11px] font-bold text-[#166534]/70 pt-1">
+                                            Already have an account? <Link to="/auth/login" className="font-black text-[#15803d] hover:text-[#14532d] hover:underline underline-offset-4">Sign in</Link>
+                                        </p>
+                                    </motion.form>
+                                ) : (
+                                    <motion.form 
+                                        key="step1" onSubmit={handleRegisterSubmit}
+                                        initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+                                        className="space-y-3 relative z-10"
+                                    >
+                                        <div className="space-y-1">
+                                            <label className="flex items-center gap-1.5 text-[12.5px] font-extrabold text-[#14532d] ml-1">
+                                                Farm Address
+                                                <span className="text-red-500 text-[18px] font-black leading-none relative -top-0.5">*</span>
+                                            </label>
+                                            <div className={inputContainerClass}>
+                                                <MapPin className={iconClass} />
+                                                <input type="text" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Full Farm Address / Location" required className={inputClass} />
+                                            </div>
+                                        </div>
+
+                                        <div className="flex gap-2">
+                                            <div className="space-y-1 flex-1">
+                                                <label className="flex items-center gap-1.5 text-[12.5px] font-extrabold text-[#14532d] ml-1">
+                                                    District
+                                                    <span className="text-red-500 text-[18px] font-black leading-none relative -top-0.5">*</span>
+                                                </label>
+                                                <div className={inputContainerClass}>
+                                                    <Compass className={iconClass} />
+                                                    <input type="text" value={district} onChange={(e) => setDistrict(e.target.value)} placeholder="District" required className={inputClass} />
+                                                </div>
+                                            </div>
+                                            <div className="space-y-1 flex-1">
+                                                <label className="flex items-center gap-1.5 text-[12.5px] font-extrabold text-[#14532d] ml-1">
+                                                    State
+                                                    <span className="text-red-500 text-[18px] font-black leading-none relative -top-0.5">*</span>
+                                                </label>
+                                                <div className={inputContainerClass}>
+                                                    <Compass className={iconClass} />
+                                                    <input type="text" value={state} onChange={(e) => setState(e.target.value)} placeholder="State" required className={inputClass} />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-1">
+                                            <label className="flex items-center gap-1.5 text-[12.5px] font-extrabold text-[#14532d] ml-1">
+                                                Mobile
+                                                <span className="inline-flex items-center gap-1 bg-green-100 border border-green-300 rounded-full px-2 py-0.5">
+                                                    <span className="text-[9px] font-extrabold text-green-600 uppercase tracking-wide">✓ Verified</span>
+                                                </span>
+                                            </label>
+                                            <div className={inputContainerClass}>
+                                                <Phone className={iconClass} />
+                                                <span className="text-[#166534]/60 font-bold text-sm z-10 mr-1 select-none">+91</span>
+                                                <input type="tel" value={mobile} readOnly placeholder="Mobile Number" className={`${inputClass} opacity-70 cursor-default`} />
+                                                <svg className="h-4 w-4 text-[#16a34a] shrink-0 z-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-1">
+                                            <label className="flex items-center gap-1.5 text-[12.5px] font-extrabold text-[#14532d] ml-1">
+                                                WhatsApp
+                                                <span className="text-[10px] font-semibold text-[#166534]/40">(optional)</span>
+                                            </label>
+                                            <div className={inputContainerClass}>
+                                                <Phone className={iconClass} />
+                                                <input type="text" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder="WhatsApp Number (Optional)" className={inputClass} />
+                                            </div>
+                                        </div>
+
+                                        <div className="flex gap-2 pt-1 perspective-[500px]">
+                                            <button
+                                                type="button" onClick={() => setStep(0)}
+                                                className="w-1/3 h-[52px] rounded-xl bg-white/50 text-[#166534] font-black border border-white/60 hover:bg-white transition-all flex items-center justify-center gap-1.5"
+                                            >
+                                                <ArrowLeft className="h-4 w-4" /> Back
+                                            </button>
+                                            <motion.button
+                                                ref={btnRef} onMouseMove={handleBtnMouseMove} onMouseLeave={handleBtnMouseLeave} style={{ x: btnXSpring, y: btnYSpring }} whileTap={{ scale: 0.95 }}
+                                                type="submit" disabled={loading || !location || !mobile || !district || !state}
+                                                className={`w-2/3 h-[52px] rounded-xl bg-gradient-to-r from-[#16a34a] to-[#15803d] text-white font-black text-base tracking-wide shadow-[0_8px_20px_rgba(22,163,74,0.4)] flex items-center justify-center overflow-hidden relative ${(!location || !mobile || !district || !state) ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                                            >
+                                                <span className="relative z-10 flex items-center gap-2 pointer-events-none">
+                                                    {loading ? <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> : <>Register <ArrowRight className="h-4 w-4" /></>}
+                                                </span>
+                                            </motion.button>
+                                        </div>
+                                    </motion.form>
+                                )}
+                            </AnimatePresence>
+                        </div>
+                    </motion.div>
+                </div>
+            </div>
         </PageTransition>
     );
 };
