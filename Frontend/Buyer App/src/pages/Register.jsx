@@ -227,12 +227,6 @@ const Register = () => {
                     background-color: rgba(255, 255, 255, 0.4);
                 }
                 @keyframes ripple { to { transform: scale(4); opacity: 0; } }
-                .rain-overlay {
-                    background-image: url('data:image/svg+xml;utf8,<svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><line x1="10" y1="5" x2="5" y2="25" stroke="rgba(255,255,255,0.35)" stroke-width="1.5" stroke-linecap="round" /><line x1="45" y1="20" x2="40" y2="40" stroke="rgba(255,255,255,0.35)" stroke-width="1.5" stroke-linecap="round" /><line x1="25" y1="50" x2="20" y2="70" stroke="rgba(255,255,255,0.35)" stroke-width="1.5" stroke-linecap="round" /><line x1="65" y1="45" x2="60" y2="65" stroke="rgba(255,255,255,0.35)" stroke-width="1.5" stroke-linecap="round" /></svg>');
-                    background-size: 80px 80px;
-                    animation: rain 0.6s linear infinite;
-                }
-                @keyframes rain { 0% { background-position: 0px 0px; } 100% { background-position: -40px 80px; } }
             `}</style>
 
             <div 
@@ -252,8 +246,6 @@ const Register = () => {
                     <div className="absolute inset-0 bg-gradient-to-br from-[#1c0d03]/95 via-[#451a03]/80 to-transparent mix-blend-multiply" />
                     <div className={`absolute inset-0 bg-gradient-to-b lg:bg-gradient-to-r ${themeGradient} to-transparent transition-colors duration-1000`} />
                     <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px]" />
-                    
-                    {weatherCond === "rain" && <div className="absolute inset-0 rain-overlay opacity-30 z-10 pointer-events-none" />}
                 </div>
                 
                 <FluidParticles mouseX={globalMouseX} mouseY={globalMouseY} />
