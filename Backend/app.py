@@ -259,31 +259,50 @@ def google_auth():
     try:
         data = get_request_json()
         credential = data.get("credential")
+        access_token = data.get("access_token")
         role = data.get("role", "buyer")   # "farmer" (Seller App) or "buyer" (Buyer App)
 
-        if not credential:
-            return jsonify({"error": "Google credential is required"}), 400
+        if not credential and not access_token:
+            return jsonify({"error": "Google credential or access_token is required"}), 400
 
         if role not in ["farmer", "buyer"]:
             return jsonify({"error": "Role must be farmer or buyer"}), 400
 
-        # ---- Verify the ID token with Google ----
-        from google.oauth2 import id_token
-        from google.auth.transport import requests as google_requests
+        idinfo = None
 
-        GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
-        if not GOOGLE_CLIENT_ID:
-            return jsonify({"error": "Google Client ID not configured on server"}), 500
+        if credential:
+            # ---- Verify the ID token with Google ----
+            from google.oauth2 import id_token
+            from google.auth.transport import requests as google_requests
 
-        try:
-            idinfo = id_token.verify_oauth2_token(
-                credential,
-                google_requests.Request(),
-                GOOGLE_CLIENT_ID
-            )
-        except ValueError as ve:
-            log_to_file(f"Google token verification failed: {ve}")
-            return jsonify({"error": f"Invalid Google token: {str(ve)}"}), 401
+            GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+            if not GOOGLE_CLIENT_ID:
+                return jsonify({"error": "Google Client ID not configured on server"}), 500
+
+            try:
+                idinfo = id_token.verify_oauth2_token(
+                    credential,
+                    google_requests.Request(),
+                    GOOGLE_CLIENT_ID
+                )
+            except ValueError as ve:
+                log_to_file(f"Google token verification failed: {ve}")
+                return jsonify({"error": f"Invalid Google token: {str(ve)}"}), 401
+        else:
+            # ---- Verify and fetch userinfo via access_token ----
+            import requests as py_requests
+            try:
+                res = py_requests.get(
+                    "https://www.googleapis.com/oauth2/v3/userinfo",
+                    headers={"Authorization": f"Bearer {access_token}"},
+                    timeout=10
+                )
+                if res.status_code != 200:
+                    return jsonify({"error": "Invalid Google access token"}), 401
+                idinfo = res.json()
+            except Exception as e:
+                log_to_file(f"Google access token verification failed: {e}")
+                return jsonify({"error": f"Failed to verify Google access token: {str(e)}"}), 401
 
         google_id = idinfo.get("sub")
         email     = idinfo.get("email", "")
