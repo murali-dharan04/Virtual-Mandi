@@ -944,7 +944,7 @@ def update_order_status(id):
                 "status": "accepted",
                 "buyer_id": str(order["buyer_id"]),
                 "crop_name": order["crop_name"]
-            }, room=str(order["buyer_id"]))
+            }, room=str(order["buyer_id"]))  # type: ignore
 
     if status.lower() == "rejected":
         order = mongo.db.Orders.find_one({"_id": ObjectId(id)})
@@ -974,7 +974,7 @@ def update_order_status(id):
                 "status": "rejected",
                 "buyer_id": str(order["buyer_id"]),
                 "crop_name": order["crop_name"]
-            }, room=str(order["buyer_id"]))
+            }, room=str(order["buyer_id"]))  # type: ignore
         
     return jsonify({"message": f"Order {id} updated to {status}"}), 200
 
