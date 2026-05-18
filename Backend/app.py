@@ -60,13 +60,41 @@ jwt = JWTManager(app)
 with app.app_context():
     try:
         mongo.db.OTPs.create_index("created_at", expireAfterSeconds=300)
+        mongo.db.OndcResponses.create_index("created_at", expireAfterSeconds=86400)
     except:
         pass
 
 # -------------------- STORE FOR ONDC MOCKS --------------------
-# This will store ONDC responses in-memory for the demo.
-# In a real app, this would be in MongoDB.
-ondc_responses = {}
+# A robust MongoDB-backed persistent dictionary that works flawlessly
+# across multiple Gunicorn worker processes.
+class MongoOndcResponses:
+    def get(self, transaction_id, default=None):
+        try:
+            doc = mongo.db.OndcResponses.find_one({"transaction_id": transaction_id})
+            return doc.get("responses", default or []) if doc else (default or [])
+        except Exception:
+            return default or []
+
+    def __setitem__(self, transaction_id, responses):
+        try:
+            mongo.db.OndcResponses.update_one(
+                {"transaction_id": transaction_id},
+                {"$set": {
+                    "responses": responses,
+                    "created_at": datetime.utcnow()
+                }},
+                upsert=True
+            )
+        except Exception as e:
+            print(f"Failed to save OndcResponses: {e}")
+
+    def __getitem__(self, transaction_id):
+        val = self.get(transaction_id, None)
+        if val is None:
+            raise KeyError(transaction_id)
+        return val
+
+ondc_responses = MongoOndcResponses()
 
 # -------------------- JWT ERROR HANDLERS --------------------
 @jwt.expired_token_loader
