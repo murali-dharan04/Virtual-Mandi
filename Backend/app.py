@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flask_pymongo import PyMongo
 from flask_jwt_extended import (
     JWTManager, create_access_token, jwt_required, get_jwt_identity
@@ -702,10 +702,21 @@ def get_listing_by_id(id):
 
 @app.route("/api/listing/<id>", methods=["GET"])
 def get_public_listing_by_id(id):
+    if not ObjectId.is_valid(id):
+        return jsonify({"error": "Invalid listing ID format"}), 400
+
     listing = mongo.db.Listings.find_one({"_id": ObjectId(id)})
     if not listing:
         return jsonify({"error": "Listing not found"}), 404
     
+    farmer = None
+    if "seller_id" in listing:
+        seller_id = listing["seller_id"]
+        try:
+            farmer = mongo.db.Users.find_one({"_id": ObjectId(seller_id)})
+        except Exception:
+            farmer = mongo.db.Users.find_one({"_id": seller_id})
+
     return jsonify({
         "id": str(listing["_id"]),
         "cropName": listing["name"],
@@ -719,9 +730,9 @@ def get_public_listing_by_id(id):
         "imageUrl": listing.get("image_url"),
         "images": listing.get("images", []),
         "views": listing.get("views", 0),
-        "farmerName": mongo.db.Users.find_one({"_id": listing["seller_id"]}).get("name", "Local Farmer") if "seller_id" in listing else "Local Farmer",
-        "farmerPhone": mongo.db.Users.find_one({"_id": listing["seller_id"]}).get("phone", "") if "seller_id" in listing else "",
-        "whatsappNumber": mongo.db.Users.find_one({"_id": listing["seller_id"]}).get("whatsapp_number", "") if "seller_id" in listing else ""
+        "farmerName": farmer.get("name", "Local Farmer") if farmer else "Local Farmer",
+        "farmerPhone": farmer.get("phone", "") if farmer else "",
+        "whatsappNumber": farmer.get("whatsapp_number", "") if farmer else ""
     }), 200
 
 @app.route("/api/listing/<id>/view", methods=["POST"])
@@ -763,7 +774,8 @@ def update_profile():
     mongo.db.Users.update_one({"_id": ObjectId(user_id)}, {"$set": update_fields})
     
     # Sync to FarmerProfile if it exists
-    if mongo.db.Users.find_one({"_id": ObjectId(user_id)})["role"] == "farmer":
+    user = mongo.db.Users.find_one({"_id": ObjectId(user_id)})
+    if user and user.get("role") == "farmer":
         mongo.db.FarmerProfiles.update_one(
             {"user_id": ObjectId(user_id)},
             {"$set": {k: v for k, v in update_fields.items() if k != "name"}}
@@ -774,6 +786,9 @@ def update_profile():
 @app.route("/api/seller/listing/<id>", methods=["PUT"])
 @jwt_required()
 def update_listing(id):
+    if not ObjectId.is_valid(id):
+        return jsonify({"error": "Invalid listing ID format"}), 400
+
     user_id = get_jwt_identity()
     data = request.get_json()
     
@@ -782,10 +797,16 @@ def update_listing(id):
     if not existing:
         return jsonify({"error": "Listing not found or unauthorized"}), 404
         
+    try:
+        quantity_val = int(data.get("quantity", existing["quantity"]))
+        price_val = float(data.get("price_per_unit") or data.get("pricePerUnit") or existing["price_per_unit"])
+    except ValueError:
+        return jsonify({"error": "Invalid numeric format for quantity or price"}), 400
+
     update_data = {
         "name": data.get("crop_name") or data.get("cropName") or existing["name"],
-        "quantity": int(data.get("quantity", existing["quantity"])),
-        "price_per_unit": float(data.get("price_per_unit") or data.get("pricePerUnit") or existing["price_per_unit"]),
+        "quantity": quantity_val,
+        "price_per_unit": price_val,
         "location": data.get("location", existing["location"]),
         "harvest_date": data.get("harvest_date") or data.get("harvestDate") or existing.get("harvest_date"),
         "quality_grade": data.get("quality_grade") or data.get("qualityGrade") or existing.get("quality_grade"),
@@ -796,6 +817,10 @@ def update_listing(id):
     }
     
     mongo.db.Listings.update_one({"_id": ObjectId(id)}, {"$set": update_data})
+
+    user = mongo.db.Users.find_one({"_id": ObjectId(user_id)})
+    farmer_phone = user.get("phone", "") if user else ""
+    whatsapp_number = user.get("whatsapp_number", "") if user else ""
 
     socketio.emit("listing_updated", {
         "id": id,
@@ -808,8 +833,8 @@ def update_listing(id):
         "unit": update_data.get("unit", "kg"),
         "imageUrl": update_data.get("image_url"),
         "views": existing.get("views", 0),
-        "farmerPhone": mongo.db.Users.find_one({"_id": ObjectId(user_id)}).get("phone", ""),
-        "whatsappNumber": mongo.db.Users.find_one({"_id": ObjectId(user_id)}).get("whatsapp_number", ""),
+        "farmerPhone": farmer_phone,
+        "whatsappNumber": whatsapp_number,
     })
 
     return jsonify({"message": "Listing updated successfully"}), 200
@@ -864,6 +889,9 @@ def get_seller_orders():
 @app.route("/api/seller/order/<id>", methods=["GET"])
 @jwt_required()
 def get_order_by_id(id):
+    if not ObjectId.is_valid(id):
+        return jsonify({"error": "Invalid order ID format"}), 400
+
     order = mongo.db.Orders.find_one({"_id": ObjectId(id)})
     if not order:
         return jsonify({"error": "Order not found"}), 404
@@ -875,7 +903,7 @@ def get_order_by_id(id):
         "crop_name": order["crop_name"],
         "buyer_name": order["buyer_name"],
         "quantity": order["quantity"],
-        "unit": order["unit"],
+        "unit": order.get("unit", "kg"),
         "total_price": order["total_price"],
         "created_at": order["created_at"]
     }), 200
@@ -883,6 +911,9 @@ def get_order_by_id(id):
 @app.route("/api/seller/order/<id>/update", methods=["PUT"])
 @jwt_required()
 def update_order_status(id):
+    if not ObjectId.is_valid(id):
+        return jsonify({"error": "Invalid order ID format"}), 400
+
     data = request.get_json()
     status = data.get("status")
     
@@ -919,12 +950,14 @@ def update_order_status(id):
         order = mongo.db.Orders.find_one({"_id": ObjectId(id)})
         if order:
             # Inventory Tracking: Restore Stock on Reject
-            log_to_file(f"Restoring {int(order.get('quantity', 0))} for listing {str(order.get('listing_id'))}")
-            res = mongo.db.Listings.update_one(
-                {"_id": ObjectId(str(order["listing_id"]))},
-                {"$inc": {"quantity": int(order.get("quantity", 0))}}
-            )
-            log_to_file(f"Restore result matched: {res.matched_count} modified: {res.modified_count}")
+            listing_id = order.get("listing_id")
+            if listing_id and ObjectId.is_valid(str(listing_id)):
+                log_to_file(f"Restoring {int(order.get('quantity', 0))} for listing {str(listing_id)}")
+                res = mongo.db.Listings.update_one(
+                    {"_id": ObjectId(str(listing_id))},
+                    {"$inc": {"quantity": int(order.get("quantity", 0))}}
+                )
+                log_to_file(f"Restore result matched: {res.matched_count} modified: {res.modified_count}")
             
             mongo.db.Notifications.insert_one({
                 "user_id": order["buyer_id"],
@@ -984,11 +1017,21 @@ def get_buyer_orders():
     orders = []
     # Fetch orders for this buyer
     for o in mongo.db.Orders.find({"buyer_id": ObjectId(user_id)}).sort("created_at", -1):
+        farmer_name = "Local Farmer"
+        seller_id = o.get("seller_id")
+        if seller_id:
+            try:
+                farmer = mongo.db.Users.find_one({"_id": ObjectId(seller_id)})
+            except Exception:
+                farmer = mongo.db.Users.find_one({"_id": seller_id})
+            if farmer:
+                farmer_name = farmer.get("name", "Local Farmer")
+
         orders.append({
             "id": str(o["_id"]),
             "order_id": o.get("order_id_str"),
             "cropName": o["crop_name"],
-            "farmerName": mongo.db.Users.find_one({"_id": o["seller_id"]})["name"],
+            "farmerName": farmer_name,
             "quantity": o["quantity"],
             "unit": o.get("unit", "kg"),
             "totalPrice": o["total_price"],
@@ -998,23 +1041,7 @@ def get_buyer_orders():
         })
     return jsonify(orders), 200
 
-@app.route("/api/transactions", methods=["GET"])
-@jwt_required()
-def get_buyer_transactions():
-    user_id = get_jwt_identity()
-    transactions = []
-    # Fetch orders for this buyer to serve as transactions
-    for o in mongo.db.Orders.find({"buyer_id": ObjectId(user_id)}).sort("created_at", -1):
-        transactions.append({
-            "id": str(o["_id"]),
-            "order_id": o.get("order_id_str"),
-            "amount": o["total_price"],
-            "status": o["status"],
-            "date": o["created_at"],
-            "description": f"Payment for {o['quantity']} {o.get('unit', 'kg')} of {o['crop_name']}",
-            "type": "debit"
-        })
-    return jsonify(transactions), 200
+# Unified transactions route is handled below under get_transactions
 
 # -------------------- BUYER ONDC MOCK ROUTES --------------------
 @app.route("/api/bpp/search", methods=["POST"])
@@ -1042,6 +1069,7 @@ def bpp_search():
         for l in found_docs:
             try:
                 # Safe lookup for farmer name
+                farmer = None
                 farmer_name = "Local Farmer"
                 seller_id = l.get("seller_id")
                 if seller_id:
@@ -1484,6 +1512,9 @@ def mark_notifications_read():
 @app.route("/api/notifications/<notif_id>", methods=["DELETE"])
 @jwt_required()
 def delete_notification(notif_id):
+    if not ObjectId.is_valid(notif_id):
+        return jsonify({"error": "Invalid notification ID format"}), 400
+
     user_id = get_jwt_identity()
     result = mongo.db.Notifications.delete_one({"_id": ObjectId(notif_id), "user_id": ObjectId(user_id)})
     if result.deleted_count == 0:
@@ -1746,7 +1777,7 @@ def identify_standalone():
         os.makedirs(UPLOAD_FOLDER)
 
     # Save temp file
-    filename = werkzeug.utils.secure_filename(file.filename)
+    filename = werkzeug.utils.secure_filename(file.filename or "temp_file")
     filepath = os.path.join(UPLOAD_FOLDER, filename)
     file.save(filepath)
 
@@ -1894,7 +1925,8 @@ def detect_crop():
         
     # Validate extension
     allowed_extensions = {'png', 'jpg', 'jpeg'}
-    file_ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
+    fname = file.filename or ""
+    file_ext = fname.rsplit('.', 1)[1].lower() if '.' in fname else ''
     
     if file_ext not in allowed_extensions:
         return jsonify({"error": "Invalid file type. Only JPG, JPEG, PNG allowed"}), 400
@@ -2045,6 +2077,11 @@ def get_seller_revenue_chart():
         from datetime import date, timedelta as td
         seller_id = get_jwt_identity()
         
+        try:
+            seller_obj_id = ObjectId(seller_id)
+        except Exception:
+            seller_obj_id = None
+
         today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
         result = []
 
@@ -2053,7 +2090,10 @@ def get_seller_revenue_chart():
             day_end   = day_start + td(days=1)
             
             orders = list(mongo.db.Orders.find({
-                "seller_id": seller_id,
+                "$or": [
+                    {"seller_id": seller_obj_id},
+                    {"seller_id": seller_id}
+                ],
                 "created_at": {"$gte": day_start, "$lt": day_end}
             }))
             
@@ -2085,10 +2125,21 @@ def get_transactions():
             role = user.get("role")
 
         query = {}
+        try:
+            user_obj_id = ObjectId(user_id)
+        except Exception:
+            user_obj_id = None
+
         if role == "farmer":
-            query["seller_id"] = user_id
+            query["$or"] = [
+                {"seller_id": user_obj_id},
+                {"seller_id": user_id}
+            ]
         else:
-            query["buyer_id"] = user_id
+            query["$or"] = [
+                {"buyer_id": user_obj_id},
+                {"buyer_id": user_id}
+            ]
             
         # For simplicity, we return all orders as "transactions"
         # In a real app, this might only be "completed" or "accepted" ones

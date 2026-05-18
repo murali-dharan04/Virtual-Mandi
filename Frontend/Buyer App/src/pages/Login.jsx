@@ -39,8 +39,7 @@ const FluidParticles = ({ mouseX, mouseY }) => {
             baseY: Math.random() * window.innerHeight,
         }))
     );
-
-    const [renders, setRenders] = useState(0);
+    const elementsRef = useRef([]);
 
     useAnimationFrame(() => {
         const mx = mouseX.get();
@@ -48,7 +47,7 @@ const FluidParticles = ({ mouseX, mouseY }) => {
         const repelRadius = 150;
         const repelForce = 5;
 
-        particles.current.forEach(p => {
+        particles.current.forEach((p, i) => {
             // Repulsion logic
             const dx = p.x - mx;
             const dy = p.y - my;
@@ -77,10 +76,11 @@ const FluidParticles = ({ mouseX, mouseY }) => {
             if (p.x > window.innerWidth) p.x = 0;
             if (p.y < 0) p.y = window.innerHeight;
             if (p.y > window.innerHeight) p.y = 0;
+
+            if (elementsRef.current[i]) {
+                elementsRef.current[i].style.transform = `translate(${p.x}px, ${p.y}px)`;
+            }
         });
-        
-        // Trigger re-render to update positions
-        setRenders(r => r + 1);
     });
 
     return (
@@ -88,7 +88,8 @@ const FluidParticles = ({ mouseX, mouseY }) => {
             {particles.current.map((p, i) => (
                 <div
                     key={i}
-                    className="absolute rounded-full bg-white/40 mix-blend-screen blur-[2px] transition-transform duration-0"
+                    ref={el => elementsRef.current[i] = el}
+                    className="absolute rounded-full bg-white/40 mix-blend-screen blur-[2px]"
                     style={{
                         width: p.size + "px",
                         height: p.size + "px",

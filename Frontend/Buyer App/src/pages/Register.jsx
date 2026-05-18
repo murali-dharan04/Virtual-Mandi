@@ -17,7 +17,6 @@ const slideUpSnappy = {
     show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 25 } }
 };
 
-// Fluid Physics Particles Component (Teal/Green tones for Buyer)
 const FluidParticles = ({ mouseX, mouseY }) => {
     const numParticles = 30;
     const particles = useRef(
@@ -29,8 +28,7 @@ const FluidParticles = ({ mouseX, mouseY }) => {
             size: Math.random() * 6 + 2,
         }))
     );
-
-    const [renders, setRenders] = useState(0);
+    const elementsRef = useRef([]);
 
     useAnimationFrame(() => {
         const mx = mouseX.get();
@@ -38,7 +36,7 @@ const FluidParticles = ({ mouseX, mouseY }) => {
         const repelRadius = 150;
         const repelForce = 5;
 
-        particles.current.forEach(p => {
+        particles.current.forEach((p, i) => {
             const dx = p.x - mx;
             const dy = p.y - my;
             const dist = Math.sqrt(dx * dx + dy * dy);
@@ -60,8 +58,11 @@ const FluidParticles = ({ mouseX, mouseY }) => {
             if (p.x > window.innerWidth) p.x = 0;
             if (p.y < 0) p.y = window.innerHeight;
             if (p.y > window.innerHeight) p.y = 0;
+
+            if (elementsRef.current[i]) {
+                elementsRef.current[i].style.transform = `translate(${p.x}px, ${p.y}px)`;
+            }
         });
-        setRenders(r => r + 1);
     });
 
     return (
@@ -69,6 +70,7 @@ const FluidParticles = ({ mouseX, mouseY }) => {
             {particles.current.map((p, i) => (
                 <div
                     key={i}
+                    ref={el => elementsRef.current[i] = el}
                     className="absolute rounded-full bg-white/40 mix-blend-screen blur-[2px]"
                     style={{
                         width: p.size + "px",
