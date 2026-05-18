@@ -15,8 +15,6 @@ const GoogleLoginButton = ({ onError }) => {
     const [hovered, setHovered] = useState(false);
 
     const handleSuccess = async (tokenResponse) => {
-        // useGoogleLogin gives us an access_token, we need to get id_token via userinfo
-        // We'll use the access token approach: fetch user info and handle in backend
         setLoading(true);
         try {
             // Fetch user info using the access token
@@ -25,30 +23,17 @@ const GoogleLoginButton = ({ onError }) => {
             });
             const userInfo = await userInfoRes.json();
             
-            // Send to backend
-            const res = await fetch(`${BASE_URL}/api/auth/google`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    access_token: tokenResponse.access_token,
-                    email: userInfo.email,
-                    name: userInfo.name,
-                    picture: userInfo.picture,
-                    role: "buyer",
-                }),
+            // Delegate auth and React state update to googleLogin in AuthContext
+            await googleLogin({
+                access_token: tokenResponse.access_token,
+                email: userInfo.email,
+                name: userInfo.name,
+                picture: userInfo.picture,
             });
-            const data = await res.json();
 
-            if (!res.ok) {
-                onError?.(data.error || "Google authentication failed.");
-                return;
-            }
-
-            localStorage.setItem("buyerToken", data.access_token);
-            if (data.user) localStorage.setItem("buyerUser", JSON.stringify(data.user));
             navigate("/");
         } catch (err) {
-            onError?.("Google sign-in failed. Please try again.");
+            onError?.(err.message || "Google sign-in failed. Please try again.");
         } finally {
             setLoading(false);
         }

@@ -66,12 +66,16 @@ export const AuthProvider = ({ children }) => {
      * Google OAuth login – receives a Google ID token from @react-oauth/google,
      * sends it to the Flask backend, then stores the resulting JWT session.
      */
-    const googleLogin = async (credential) => {
+    const googleLogin = async (payload) => {
         try {
+            const bodyObj = typeof payload === "string"
+                ? { credential: payload, role: "buyer" }
+                : { ...payload, role: "buyer" };
+
             const res = await fetch(`${BASE_URL}/api/auth/google`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ credential, role: "buyer" }),
+                body: JSON.stringify(bodyObj),
             });
             const data = await res.json();
             if (!res.ok) {
