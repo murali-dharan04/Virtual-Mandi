@@ -153,12 +153,12 @@ export const sellerApi = {
         });
     },
 
-    getOrders: async () => {
-        return await request("/api/seller/orders");
+    getOrders: async (options = {}) => {
+        return await request("/api/seller/orders", options);
     },
 
-    getListings: async () => {
-        return await request("/api/seller/listings");
+    getListings: async (options = {}) => {
+        return await request("/api/seller/listings", options);
     },
 
     getDashboardStats: async () => {

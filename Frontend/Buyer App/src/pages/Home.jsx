@@ -56,7 +56,7 @@ const Home = () => {
             const controller = new AbortController();
             const timeout = setTimeout(() => controller.abort(), 15000);
             try {
-                const results = await api.search(search);
+                const results = await api.search(search, { signal: controller.signal });
                 clearTimeout(timeout);
                 setListings(results);
             } catch (err) {

@@ -103,7 +103,7 @@ export const api = {
     deleteNotification: async (notifId) => {
         return await request(`/api/notifications/${notifId}`, { method: "DELETE" });
     },
-    search: async (itemName = "") => {
+    search: async (itemName = "", options = {}) => {
         const transactionId = Math.random().toString(36).substring(2) + Date.now().toString(36);
         console.log(`Initiating search: "${itemName}" (ID: ${transactionId})`);
 
@@ -113,6 +113,7 @@ export const api = {
         };
 
         const searchRes = await request("/api/bpp/search", {
+            ...options,
             method: "POST",
             body: JSON.stringify(payload)
         });

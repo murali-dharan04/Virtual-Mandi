@@ -1,0 +1,14 @@
+{
+  "context": {
+    "transaction_id": "test_txn_12345"
+  },
+  "message": {
+    "intent": {
+      "item": {
+        "descriptor": {
+          "name": ""
+        }
+      }
+    }
+  }
+}

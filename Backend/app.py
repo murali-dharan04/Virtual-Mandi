@@ -123,9 +123,6 @@ def missing_token_callback(error):
 def home():
     return jsonify({"message": "Virtual Mandi Backend Running Successfully!"})
 
-@app.route("/api/ping", methods=["GET"])
-def ping():
-    return jsonify({"message": "pong"})
 
 @app.route("/api/test-db", methods=["GET"])
 def test_db():

@@ -26,7 +26,7 @@ const Orders = () => {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 12000);
         try {
-            const data = await sellerApi.getOrders();
+            const data = await sellerApi.getOrders({ signal: controller.signal });
             clearTimeout(timeout);
             if (Array.isArray(data)) {
                 setOrders(data.map(o => ({
@@ -110,9 +110,6 @@ const Orders = () => {
                 >
                     Retry
                 </button>
-            </div>
-        );
-    }
             </div>
         );
     }

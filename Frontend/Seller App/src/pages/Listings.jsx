@@ -28,7 +28,7 @@ const Listings = () => {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 12000);
         try {
-            const data = await sellerApi.getListings();
+            const data = await sellerApi.getListings({ signal: controller.signal });
             clearTimeout(timeout);
             if (Array.isArray(data)) {
                 setListings(data.map(l => ({
