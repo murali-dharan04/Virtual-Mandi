@@ -38,6 +38,11 @@ app = Flask(__name__)
 CORS(app, supports_credentials=True, origins="*")
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 
+@app.route("/api/ping", methods=["GET"])
+def ping():
+    """Keepalive endpoint — prevents Render cold-start by being pinged regularly."""
+    return jsonify({"status": "ok", "message": "Virtual Mandi Backend Running!"}), 200
+
 # -------------------- CONFIG --------------------
 app.config["MONGO_URI"] = os.getenv("MONGO_URI")
 app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")
@@ -722,20 +727,26 @@ def add_listing_plural():
 @jwt_required()
 def get_seller_listings():
     user_id = get_jwt_identity()
+    # Projection: only fetch the fields we need — reduces wire transfer significantly
+    projection = {
+        "_id": 1, "name": 1, "crop_name": 1, "quantity": 1, "price_per_unit": 1,
+        "location": 1, "harvest_date": 1, "quality_grade": 1, "category": 1,
+        "image_url": 1, "unit": 1, "status": 1
+    }
     listings = []
-    # Fetch all listings for this seller
-    for l in mongo.db.Listings.find({"seller_id": ObjectId(user_id)}):
+    for l in mongo.db.Listings.find({"seller_id": ObjectId(user_id)}, projection).sort("_id", -1).limit(200):
         listings.append({
             "id": str(l["_id"]),
             "cropName": l.get("name") or l.get("crop_name"),
-            "quantity": l.get("quantity"),
-            "pricePerUnit": l.get("price_per_unit"),
+            "quantity": l.get("quantity", 0),
+            "pricePerUnit": l.get("price_per_unit", 0),
             "location": l.get("location"),
             "harvestDate": l.get("harvest_date"),
             "qualityGrade": l.get("quality_grade"),
             "category": l.get("category", "Other"),
             "imageUrl": l.get("image_url"),
-            "unit": l.get("unit") or "kg"
+            "unit": l.get("unit") or "kg",
+            "status": l.get("status", "active")
         })
     return jsonify(listings), 200
 
@@ -926,23 +937,23 @@ def delete_listing(id):
 @jwt_required()
 def get_seller_orders():
     user_id = get_jwt_identity()
+    # Single ObjectId query — one index scan instead of two
+    projection = {
+        "_id": 1, "order_id_str": 1, "crop_name": 1, "buyer_name": 1,
+        "quantity": 1, "unit": 1, "total_price": 1, "status": 1, "created_at": 1
+    }
     orders = []
-    # Fetch orders where seller_id is either an ObjectId or a string (for robustness)
-    query = {"$or": [
-        {"seller_id": ObjectId(user_id)},
-        {"seller_id": user_id}
-    ]}
-    for o in mongo.db.Orders.find(query).sort("_id", -1):
+    for o in mongo.db.Orders.find({"seller_id": ObjectId(user_id)}, projection).sort("_id", -1).limit(100):
         orders.append({
             "id": str(o["_id"]),
             "_id": str(o["_id"]),
             "order_id": o.get("order_id_str"),
-            "crop_name": o["crop_name"],
+            "crop_name": o.get("crop_name", ""),
             "buyer_name": o.get("buyer_name", "Anonymous"),
-            "quantity": o["quantity"],
+            "quantity": o.get("quantity", 0),
             "unit": o.get("unit", "kg"),
-            "total_price": o["total_price"],
-            "status": o["status"],
+            "total_price": o.get("total_price", 0),
+            "status": o.get("status", "Pending"),
             "created_at": o.get("created_at")
         })
     return jsonify(orders), 200
@@ -1260,35 +1271,36 @@ def bpp_search():
         descriptor = item.get("descriptor", {})
         item_name = str(descriptor.get("name") or "").lower()
 
-        # Find matching listings
-        query = {}
+        # Build query — only fetch in-stock listings (quantity > 0)
+        query = {"quantity": {"$gt": 0}}
         if item_name:
             query["name"] = {"$regex": item_name, "$options": "i"}
         
-        found_docs = list(mongo.db.Listings.find(query))
+        # Projection: only transfer fields needed by frontend — huge speed gain
+        projection = {
+            "_id": 1, "name": 1, "price_per_unit": 1, "quantity": 1,
+            "location": 1, "quality_grade": 1, "category": 1,
+            "unit": 1, "image_url": 1, "seller_id": 1,
+            "distance": 1, "delivery_estimate": 1
+        }
+        found_docs = list(mongo.db.Listings.find(query, projection).limit(200))
 
-        # Bulk fetch all distinct sellers to solve the N+1 database bottleneck
-        seller_ids = set()
+        # Bulk fetch all distinct sellers — single query, no N+1
+        seller_obj_ids = []
         for l in found_docs:
             sid = l.get("seller_id")
             if sid:
-                seller_ids.add(sid)
-                
-        farmers_map = {}
-        if seller_ids:
-            object_ids = []
-            for sid in seller_ids:
                 try:
-                    object_ids.append(ObjectId(sid) if isinstance(sid, str) else sid)
+                    seller_obj_ids.append(ObjectId(sid) if isinstance(sid, str) else sid)
                 except Exception:
                     pass
-            
-            farmers = list(mongo.db.Users.find({
-                "$or": [
-                    {"_id": {"$in": object_ids}},
-                    {"_id": {"$in": list(seller_ids)}}
-                ]
-            }))
+
+        farmers_map = {}
+        if seller_obj_ids:
+            farmer_projection = {"_id": 1, "name": 1, "phone": 1, "whatsapp_number": 1}
+            farmers = list(mongo.db.Users.find(
+                {"_id": {"$in": seller_obj_ids}}, farmer_projection
+            ))
             for f in farmers:
                 farmers_map[str(f["_id"])] = f
 
@@ -1297,17 +1309,16 @@ def bpp_search():
             try:
                 seller_id_str = str(l.get("seller_id")) if l.get("seller_id") else None
                 farmer = farmers_map.get(seller_id_str) if seller_id_str else None
-                farmer_name = farmer.get("name", "Local Farmer") if farmer else "Local Farmer"
                 
                 listings.append({
-                    "id": str(l.get("_id")),
+                    "id": str(l["_id"]),
                     "descriptor": {"name": l.get("name", "Unknown Crop")},
                     "price": {"value": str(l.get("price_per_unit", 0)), "currency": "INR"},
                     "quantity": {"available": {"count": l.get("quantity", 0)}},
                     "location": l.get("location", "Unknown"),
                     "quality_grade": l.get("quality_grade", "A"),
                     "category": l.get("category", "Other"),
-                    "farmer_name": farmer_name,
+                    "farmer_name": farmer.get("name", "Local Farmer") if farmer else "Local Farmer",
                     "farmer_phone": farmer.get("phone", "") if farmer else "",
                     "whatsapp_number": farmer.get("whatsapp_number", "") if farmer else "",
                     "unit": l.get("unit", "kg"),
@@ -1320,18 +1331,10 @@ def bpp_search():
 
         catalog_payload = {
             "catalog": {
-                "bpp/providers": [
-                    {"items": listings}
-                ]
+                "bpp/providers": [{"items": listings}]
             }
         }
-        # Store mock response for other legacy clients
-        ondc_responses[transaction_id] = [
-            {
-                "context": {"action": "on_search", "transaction_id": transaction_id},
-                "message": catalog_payload
-            }
-        ]
+        # NOTE: Removed blocking ondc_responses DB write — not needed for direct catalog response
         return jsonify({
             "message": "Search initiated",
             "catalog": catalog_payload["catalog"]

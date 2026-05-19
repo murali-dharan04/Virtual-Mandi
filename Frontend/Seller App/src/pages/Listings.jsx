@@ -19,11 +19,17 @@ const Listings = () => {
     const [search, setSearch] = useState("");
     const [listings, setListings] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [filter, setFilter] = useState("all"); // all, active, sold
 
     const fetchListings = async () => {
+        setIsLoading(true);
+        setError(null);
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 12000);
         try {
             const data = await sellerApi.getListings();
+            clearTimeout(timeout);
             if (Array.isArray(data)) {
                 setListings(data.map(l => ({
                     id: l.id || l._id,
@@ -35,8 +41,16 @@ const Listings = () => {
                     imageUrl: l.imageUrl || null,
                     location: l.location || "N/A"
                 })));
+            } else if (data?.error) {
+                setError(data.error);
             }
         } catch (err) {
+            clearTimeout(timeout);
+            if (err.name === "AbortError") {
+                setError("Server is waking up (Render cold-start). Please retry in a moment.");
+            } else {
+                setError("Failed to load listings. Check your connection.");
+            }
             console.error(err);
         } finally {
             setIsLoading(false);
@@ -74,6 +88,24 @@ const Listings = () => {
             <div className="flex flex-col items-center justify-center py-40 gap-4">
                 <div className="h-10 w-10 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent" />
                 <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Loading Crops...</p>
+                <p className="text-xs text-slate-400">Server may be waking up — this takes ~30s on first load</p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex flex-col items-center justify-center py-40 gap-4">
+                <div className="h-14 w-14 rounded-full bg-red-50 flex items-center justify-center mb-2">
+                    <span className="text-2xl">⚠️</span>
+                </div>
+                <p className="text-sm font-bold text-slate-700 text-center max-w-xs">{error}</p>
+                <button
+                    onClick={fetchListings}
+                    className="mt-2 px-6 py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-black uppercase tracking-widest shadow-md hover:bg-emerald-700 transition-colors"
+                >
+                    Retry
+                </button>
             </div>
         );
     }

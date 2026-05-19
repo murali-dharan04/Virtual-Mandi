@@ -1,5 +1,12 @@
 export const BASE_URL = import.meta.env.VITE_API_URL || "https://virtual-mandi.onrender.com";
 
+// Keepalive: ping the backend every 9 minutes to prevent Render free-tier cold-starts
+(function startKeepalive() {
+    const ping = () => fetch(`${BASE_URL}/api/ping`).catch(() => {});
+    ping(); // ping immediately on app load
+    setInterval(ping, 9 * 60 * 1000); // then every 9 minutes
+})();
+
 const getToken = () => localStorage.getItem("sellerToken");
 
 /**

@@ -17,24 +17,38 @@ const Orders = () => {
     const { toast } = useToast();
     const [orders, setOrders] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [filter, setFilter] = useState("all");
 
     const fetchOrders = async () => {
+        setIsLoading(true);
+        setError(null);
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 12000);
         try {
             const data = await sellerApi.getOrders();
+            clearTimeout(timeout);
             if (Array.isArray(data)) {
                 setOrders(data.map(o => ({
-                    id: o._id,
-                    cropName: o.crop_name,
-                    buyerName: o.buyer_name,
-                    quantity: o.quantity,
+                    id: o.id || o._id,          // backend returns both "id" and "_id"
+                    cropName: o.crop_name || o.cropName || "",
+                    buyerName: o.buyer_name || o.buyerName || "Anonymous",
+                    quantity: o.quantity || 0,
                     unit: o.unit || "kg",
-                    totalPrice: o.total_price,
-                    status: o.status,
-                    createdAt: o.created_at
+                    totalPrice: o.total_price || o.totalPrice || 0,
+                    status: o.status || "Pending",
+                    createdAt: o.created_at || o.createdAt
                 })));
+            } else if (data?.error) {
+                setError(data.error);
             }
         } catch (err) {
+            clearTimeout(timeout);
+            if (err.name === "AbortError") {
+                setError("Server is waking up (Render cold-start). Please retry in a moment.");
+            } else {
+                setError("Failed to load orders. Check your connection.");
+            }
             console.error(err);
         } finally {
             setIsLoading(false);
@@ -43,7 +57,7 @@ const Orders = () => {
 
     useEffect(() => {
         fetchOrders();
-        const interval = setInterval(fetchOrders, 10000);
+        const interval = setInterval(fetchOrders, 15000);
         return () => clearInterval(interval);
     }, []);
 
@@ -78,6 +92,27 @@ const Orders = () => {
             <div className="flex flex-col items-center justify-center py-40 gap-4">
                 <div className="h-10 w-10 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent" />
                 <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Syncing Orders...</p>
+                <p className="text-xs text-slate-400">Server may be waking up — this takes ~30s on first load</p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex flex-col items-center justify-center py-40 gap-4">
+                <div className="h-14 w-14 rounded-full bg-red-50 flex items-center justify-center mb-2">
+                    <span className="text-2xl">⚠️</span>
+                </div>
+                <p className="text-sm font-bold text-slate-700 text-center max-w-xs">{error}</p>
+                <button
+                    onClick={fetchOrders}
+                    className="mt-2 px-6 py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-black uppercase tracking-widest shadow-md hover:bg-emerald-700 transition-colors"
+                >
+                    Retry
+                </button>
+            </div>
+        );
+    }
             </div>
         );
     }

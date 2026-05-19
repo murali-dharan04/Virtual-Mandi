@@ -30,6 +30,7 @@ const Home = () => {
     const [search, setSearch] = useState(searchParams.get("search") || "");
     const [listings, setListings] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [loadError, setLoadError] = useState(null);
     const [filtersOpen, setFiltersOpen] = useState(false);
     const [filters, setFilters] = useState({
         category: "All",
@@ -51,17 +52,27 @@ const Home = () => {
     useEffect(() => {
         const fetchListings = async () => {
             setIsLoading(true);
+            setLoadError(null);
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 15000);
             try {
                 const results = await api.search(search);
+                clearTimeout(timeout);
                 setListings(results);
             } catch (err) {
+                clearTimeout(timeout);
+                if (err.name === "AbortError") {
+                    setLoadError("Server is waking up — Render cold-start takes ~30s. Click Retry!");
+                } else {
+                    setLoadError("Could not reach the server. Check your internet connection.");
+                }
                 console.error("Failed to fetch listings", err);
             } finally {
                 setIsLoading(false);
             }
         };
 
-        const timer = setTimeout(fetchListings, 500);
+        const timer = setTimeout(fetchListings, 400);
         return () => clearTimeout(timer);
     }, [search]);
 
@@ -214,6 +225,20 @@ const Home = () => {
                                     <Loader2 className="mb-4 h-12 w-12 animate-spin text-emerald-500" />
                                     <h3 className="text-lg font-semibold text-slate-700">{t("common.loading")}</h3>
                                     <p className="text-sm text-slate-500 mt-1">Searching farms near you...</p>
+                                    <p className="text-xs text-slate-400 mt-2">Server may be waking up — first load takes ~30s</p>
+                                </div>
+                            ) : loadError ? (
+                                <div className="flex flex-col items-center justify-center py-20 text-center">
+                                    <div className="h-16 w-16 rounded-full bg-amber-50 flex items-center justify-center mb-4">
+                                        <span className="text-3xl">🌾</span>
+                                    </div>
+                                    <h3 className="text-base font-bold text-slate-700 max-w-xs">{loadError}</h3>
+                                    <button
+                                        onClick={() => setSearch(s => s)}
+                                        className="mt-4 px-6 py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-black uppercase tracking-widest shadow-md hover:bg-emerald-700 transition-colors"
+                                    >
+                                        Retry
+                                    </button>
                                 </div>
                             ) : filtered.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center py-20 text-center">
