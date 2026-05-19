@@ -712,6 +712,12 @@ def add_listing():
         traceback.print_exc()
         return jsonify({"error": f"Internal server error: {str(e)}"}), 500
 
+@app.route("/api/seller/listings", methods=["POST"])
+@jwt_required()
+def add_listing_plural():
+    """Plural endpoint alias to support E2E suites calling POST /api/seller/listings."""
+    return add_listing()
+
 @app.route("/api/seller/listings", methods=["GET"])
 @jwt_required()
 def get_seller_listings():
@@ -1144,6 +1150,98 @@ def get_buyer_orders():
             "placedAt": o["created_at"]
         })
     return jsonify(orders), 200
+
+@app.route("/api/buyer/orders", methods=["POST"])
+@jwt_required()
+def create_buyer_order_direct():
+    """Direct POST endpoint to place a buyer order, supporting raw JSON for maximum compatibility with E2E suites."""
+    buyer_id = get_jwt_identity()
+    data = request.get_json() or {}
+    
+    # Support various payload conventions for field naming
+    listing_id = data.get("listing_id") or data.get("listingId") or data.get("item_id") or data.get("itemId")
+    quantity_raw = data.get("quantity") or data.get("count") or 1
+    
+    try:
+        quantity = int(quantity_raw)
+    except Exception:
+        quantity = 1
+
+    if not listing_id:
+        return jsonify({"error": "Missing required field: listing_id"}), 400
+        
+    if not ObjectId.is_valid(str(listing_id)):
+        return jsonify({"error": "Invalid listing_id format"}), 400
+        
+    listing = mongo.db.Listings.find_one({"_id": ObjectId(str(listing_id))})
+    if not listing:
+        return jsonify({"error": "Listing not found"}), 404
+        
+    buyer = mongo.db.Users.find_one({"_id": ObjectId(buyer_id)})
+    buyer_name = buyer["name"] if buyer else "Unknown Buyer"
+    
+    # Construct standard order document matching ONDC schemas
+    order = {
+        "buyer_id": ObjectId(buyer_id),
+        "seller_id": listing["seller_id"],
+        "listing_id": ObjectId(str(listing_id)),
+        "crop_name": listing["name"],
+        "buyer_name": buyer_name,
+        "quantity": quantity,
+        "unit": listing.get("unit", "kg"),
+        "total_price": float(listing["price_per_unit"]) * quantity,
+        "status": "Pending",
+        "order_id_str": "ORD-" + os.urandom(4).hex().upper(),
+        "created_at": time.strftime("%Y-%m-%d %H:%M:%S")
+    }
+    
+    inserted_id = mongo.db.Orders.insert_one(order).inserted_id
+    
+    # Inventory Tracking: Reserve stock instantly on placement
+    mongo.db.Listings.update_one(
+        {"_id": ObjectId(str(listing_id))},
+        {"$inc": {"quantity": -quantity}}
+    )
+    
+    # Emit real-time listing_updated event to all clients to synchronize stock levels instantly
+    updated_listing = mongo.db.Listings.find_one({"_id": ObjectId(str(listing_id))})
+    if updated_listing:
+        try:
+            seller = mongo.db.Users.find_one({"_id": ObjectId(updated_listing["seller_id"])})
+        except Exception:
+            seller = mongo.db.Users.find_one({"_id": updated_listing["seller_id"]})
+        
+        socketio.emit("listing_updated", {
+            "id": str(updated_listing["_id"]),
+            "cropName": updated_listing.get("name"),
+            "category": updated_listing.get("category"),
+            "quantity": int(updated_listing.get("quantity", 0)),
+            "pricePerUnit": float(updated_listing.get("price_per_unit", 0)),
+            "location": updated_listing.get("location"),
+            "unit": updated_listing.get("unit", "kg"),
+            "imageUrl": updated_listing.get("image_url", "/placeholder.svg")
+        })
+        
+        # Real-time Socket.IO notification to farmer
+        socketio.emit("new_order", {
+            "order_id": str(inserted_id),
+            "crop_name": listing["name"],
+            "quantity": quantity,
+            "buyer_name": buyer_name
+        }, room=str(updated_listing["seller_id"]))
+        
+    return jsonify({
+        "message": "Order placed successfully",
+        "order_id": str(inserted_id),
+        "order": {
+            "id": str(inserted_id),
+            "cropName": listing["name"],
+            "quantity": quantity,
+            "totalPrice": order["total_price"],
+            "status": "Pending",
+            "placedAt": order["created_at"]
+        }
+    }), 201
 
 # Unified transactions route is handled below under get_transactions
 
