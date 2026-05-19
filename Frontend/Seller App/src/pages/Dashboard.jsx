@@ -22,75 +22,54 @@ const MOCK_CHART_DATA = [
     { name: 'Sun', value: 3900 },
 ];
 
+import { useQuery } from "@tanstack/react-query";
+
 const Dashboard = () => {
     const navigate = useNavigate();
     const { toast } = useToast();
 
-    const [stats, setStats] = useState({ activeListings: 0, totalOrders: 0, revenue: 0, pendingOrders: 0 });
-    const [recentOrders, setRecentOrders] = useState([]);
-    const [marketPrices, setMarketPrices] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
+    // 1. Fetch Stats
+    const { data: statsData, isLoading: statsLoading } = useQuery({
+        queryKey: ["seller-stats"],
+        queryFn: () => sellerApi.getDashboardStats(),
+        refetchInterval: 30000,
+    });
+
+    const stats = {
+        activeListings: statsData?.activeListings || 0,
+        totalOrders: statsData?.totalOrders || 0,
+        revenue: statsData?.revenue || 0,
+        pendingOrders: statsData?.pendingOrders || 0
+    };
+
+    // 2. Fetch Orders (Recent Only)
+    const { data: ordersData = [], isLoading: ordersLoading } = useQuery({
+        queryKey: ["seller-orders"],
+        queryFn: () => sellerApi.getOrders(),
+        refetchInterval: 30000,
+    });
+
+    const recentOrders = Array.isArray(ordersData)
+        ? ordersData.filter(o => (o.status || "").toLowerCase() === 'pending').slice(0, 5)
+        : [];
+
+    // 3. Fetch Market Prices
+    const { data: marketResp, isLoading: marketLoading } = useQuery({
+        queryKey: ["market-prices", "dl"],
+        queryFn: () => sellerApi.getMarketPrices("dl"),
+        staleTime: 300000, // 5 minutes
+    });
+
+    const marketPrices = (marketResp?.data && Array.isArray(marketResp.data))
+        ? marketResp.data.slice(0, 3)
+        : [];
+
+    const isLoading = statsLoading || ordersLoading || marketLoading;
+    const isFetching = false; // Backward compatibility for any UI and animations
 
     const sellerUser = (() => { try { return JSON.parse(localStorage.getItem("sellerUser") || "{}"); } catch { return {}; } })();
     const sellerName = sellerUser?.name?.split(" ")[0] || "Farmer";
     const sellerLocation = sellerUser?.location || "Delhi";
-
-    const [isFetching, setIsFetching] = useState(false);
-
-    useEffect(() => {
-        const load = async (isBackground = false) => {
-            if (isFetching) return;
-            setIsFetching(true);
-
-            if (!isBackground && stats.activeListings === 0 && stats.totalOrders === 0) {
-                setIsLoading(true);
-            }
-
-            const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 60000);
-
-            try {
-                const [statsData, ordersData, marketData] = await Promise.all([
-                    sellerApi.getDashboardStats({ signal: controller.signal }),
-                    sellerApi.getOrders({ signal: controller.signal }),
-                    sellerApi.getMarketPrices("dl") // No major timeout needed for mock-fallback endpoint
-                ]);
-                clearTimeout(timeout);
-
-                if (statsData && !statsData.error && !statsData.msg) {
-                    setStats({
-                        activeListings: statsData.activeListings || 0,
-                        totalOrders: statsData.totalOrders || 0,
-                        revenue: statsData.revenue || 0,
-                        pendingOrders: statsData.pendingOrders || 0
-                    });
-                } else if (statsData?.error === "Invalid credentials or session expired") {
-                    localStorage.removeItem("sellerToken");
-                    localStorage.removeItem("sellerUser");
-                    navigate("/login");
-                }
-
-                if (Array.isArray(ordersData)) {
-                    setRecentOrders(ordersData.filter(o => {
-                        const status = (o.status || "").toLowerCase();
-                        return status === 'pending';
-                    }).slice(0, 5));
-                }
-                if (marketData && marketData.data && Array.isArray(marketData.data)) {
-                    setMarketPrices(marketData.data.slice(0, 3));
-                }
-            } catch (e) {
-                console.error("Dashboard load error:", e);
-            }
-            finally {
-                setIsLoading(false);
-                setIsFetching(false);
-            }
-        };
-        load();
-        const interval = setInterval(() => load(true), 30000);
-        return () => clearInterval(interval);
-    }, [navigate]);
 
     return (
         <PageTransition>

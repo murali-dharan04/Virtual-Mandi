@@ -102,7 +102,7 @@ const Listings = () => {
             <div className="flex flex-col items-center justify-center py-40 gap-4">
                 <div className="h-10 w-10 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent" />
                 <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Loading Crops...</p>
-                <p className="text-xs text-slate-400">Connecting to server — this takes ~30s on first load</p>
+                <p className="text-xs text-slate-400 font-medium">Connecting to secure farmer network...</p>
             </div>
         );
     }

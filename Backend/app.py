@@ -68,8 +68,12 @@ with app.app_context():
         mongo.db.OndcResponses.create_index("created_at", expireAfterSeconds=86400)
         # Performance indexes on foreign keys
         mongo.db.Listings.create_index("seller_id")
+        mongo.db.Listings.create_index("name")
+        mongo.db.Listings.create_index("category")
+        mongo.db.Listings.create_index("quantity")
         mongo.db.Orders.create_index("buyer_id")
         mongo.db.Orders.create_index("seller_id")
+        mongo.db.Orders.create_index("status")
         mongo.db.Orders.create_index([("created_at", -1)])
     except:
         pass
@@ -1271,7 +1275,11 @@ def bpp_search():
         item_name = str(descriptor.get("name") or "").lower()
 
         # Fetch potential listings — we'll filter by quantity in Python to handle type inconsistencies
-        query = {}
+        # Fetch potential listings — filter by quantity in DB where possible
+        query = {"$or": [
+            {"quantity": {"$gt": 0}},
+            {"quantity": {"$type": "string", "$ne": "0"}}
+        ]}
         if item_name:
             query["name"] = {"$regex": item_name, "$options": "i"}
         
@@ -1490,7 +1498,7 @@ def get_market_prices():
         url = f"https://api.data.gov.in/resource/9ef84268-d588-465a-a308-a864a43d0070?api-key={api_key}&format=json&filters[state]={state_name}&limit=50"
         
         print(f"DEBUG: Fetching Market data for {state_name}: {url}")
-        response = requests.get(url, timeout=20)
+        response = requests.get(url, timeout=5)
         formatted_data = []
         
         if response.status_code == 200:
@@ -1502,7 +1510,7 @@ def get_market_prices():
                 # Try fetching recent records overall if state filter returned nothing
                 print(f"DEBUG: No records for {state_name}, trying recent overall...")
                 fallback_url = f"https://api.data.gov.in/resource/9ef84268-d588-465a-a308-a864a43d0070?api-key={api_key}&format=json&limit=50"
-                response = requests.get(fallback_url, timeout=20)
+                response = requests.get(fallback_url, timeout=5)
                 if response.status_code == 200:
                     records = response.json().get("records", [])
                     print(f"DEBUG: Fetched {len(records)} recent records overall")

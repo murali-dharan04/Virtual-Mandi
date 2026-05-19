@@ -225,7 +225,7 @@ const Home = () => {
                                     <Loader2 className="mb-4 h-12 w-12 animate-spin text-emerald-500" />
                                     <h3 className="text-lg font-semibold text-slate-700">{t("common.loading")}</h3>
                                     <p className="text-sm text-slate-500 mt-1">Searching farms near you...</p>
-                                    <p className="text-xs text-slate-400 mt-2">Server may be waking up — first load takes ~30s</p>
+                                    <p className="text-xs text-slate-400 mt-2 font-medium">Fetching the latest produce for you...</p>
                                 </div>
                             ) : loadError ? (
                                 <div className="flex flex-col items-center justify-center py-20 text-center">
