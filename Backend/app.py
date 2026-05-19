@@ -70,6 +70,7 @@ with app.app_context():
         mongo.db.Listings.create_index("seller_id")
         mongo.db.Orders.create_index("buyer_id")
         mongo.db.Orders.create_index("seller_id")
+        mongo.db.Orders.create_index([("created_at", -1)])
     except:
         pass
 

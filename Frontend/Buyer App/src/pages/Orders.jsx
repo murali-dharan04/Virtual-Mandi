@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { api } from "@/services/api";
+import { useQuery } from "@tanstack/react-query";
 import OrderCard from "@/components/OrderCard";
 import { ArrowLeft, Package, CheckCircle, Clock, XCircle, Loader2, Truck } from "lucide-react";
 import { motion } from "framer-motion";
@@ -12,28 +12,15 @@ const Orders = () => {
     const { orderId } = useParams();
     const navigate = useNavigate();
     const { toast } = useToast();
-    const [orders, setOrders] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
 
-    const fetchOrders = async () => {
-        try {
-            const data = await api.getOrders();
-            if (Array.isArray(data)) {
-                setOrders(data);
-            }
-        } catch (err) {
-            console.error("Failed to fetch orders:", err);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchOrders();
-        // Poll every 5 seconds for status updates
-        const interval = setInterval(fetchOrders, 5000);
-        return () => clearInterval(interval);
-    }, []);
+    const {
+        data: orders = [],
+        isLoading
+    } = useQuery({
+        queryKey: ["orders"],
+        queryFn: api.getOrders,
+        refetchInterval: 5000,
+    });
 
     const statusSteps = [
         { key: "pending", label: "Order Received", icon: Clock, desc: "Awaiting farmer confirmation" },
@@ -107,8 +94,8 @@ const Orders = () => {
                                                     animate={{ scale: 1, opacity: 1 }}
                                                     transition={{ delay: i * 0.1 }}
                                                     className={`relative z-10 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border-2 transition-all duration-500 ${active
-                                                            ? "bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-200"
-                                                            : "bg-white border-slate-200 text-slate-300"
+                                                        ? "bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-200"
+                                                        : "bg-white border-slate-200 text-slate-300"
                                                         }`}
                                                 >
                                                     <Icon className="h-5 w-5" />

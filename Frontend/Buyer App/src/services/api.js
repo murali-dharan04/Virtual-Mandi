@@ -2,7 +2,7 @@ export const BASE_URL = import.meta.env.VITE_API_URL || "https://virtual-mandi.o
 
 // Keepalive: ping the backend every 9 minutes to prevent Render free-tier cold-starts
 (function startKeepalive() {
-    const ping = () => fetch(`${BASE_URL}/api/ping`).catch(() => {});
+    const ping = () => fetch(`${BASE_URL}/api/ping`).catch(() => { });
     ping(); // ping immediately on app load
     setInterval(ping, 9 * 60 * 1000); // then every 9 minutes
 })();
@@ -23,7 +23,7 @@ const getHeaders = () => {
  */
 const request = async (endpoint, options = {}) => {
     const url = `${BASE_URL}${endpoint}`;
-    
+
     try {
         const response = await fetch(url, {
             ...options,
@@ -164,6 +164,13 @@ export const api = {
         const confirmRes = await request("/api/bpp/confirm", { method: "POST", body: JSON.stringify(payload) });
         if (confirmRes.error) return null;
         return confirmRes.order || null;
+    },
+    placeOrderDirect: async (listingId, quantity) => {
+        const data = await request("/api/buyer/orders", {
+            method: "POST",
+            body: JSON.stringify({ listing_id: listingId, quantity })
+        });
+        return data.order || data;
     },
     getListingById: async (id) => {
         return await request(`/api/listing/${id}`);

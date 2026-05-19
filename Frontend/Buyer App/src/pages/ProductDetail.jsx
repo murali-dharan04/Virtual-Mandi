@@ -34,11 +34,11 @@ const ProductDetail = () => {
     const { toast } = useToast();
     const queryClient = useQueryClient();
 
-    const { 
-        data: listing, 
-        isLoading, 
-        isError, 
-        error 
+    const {
+        data: listing,
+        isLoading,
+        isError,
+        error
     } = useQuery({
         queryKey: ["product", id],
         queryFn: async () => {
@@ -87,10 +87,10 @@ const ProductDetail = () => {
             },
             onDelete: (deletedData) => {
                 if (deletedData.id === id || deletedData._id === id) {
-                    toast({ 
-                        title: "Listing Removed", 
-                        description: "The seller has removed this listing.", 
-                        variant: "destructive" 
+                    toast({
+                        title: "Listing Removed",
+                        description: "The seller has removed this listing.",
+                        variant: "destructive"
                     });
                     navigate("/");
                 }
@@ -150,6 +150,19 @@ const ProductDetail = () => {
         C: "bg-slate-100 text-slate-600 border-slate-200"
     };
 
+    if (isError) {
+        return (
+            <div className="flex min-h-screen flex-col items-center justify-center p-4">
+                <div className="h-16 w-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-4">
+                    <X className="h-8 w-8" />
+                </div>
+                <h2 className="text-xl font-bold text-slate-800 mb-2">Listing Not Found</h2>
+                <p className="text-slate-500 mb-6 text-center max-w-xs">{error?.message || "This product may have been removed or is no longer available."}</p>
+                <Button onClick={() => navigate("/")} className="bg-emerald-600">Back to Marketplace</Button>
+            </div>
+        );
+    }
+
     if (!listing) {
         return (
             <div className="flex min-h-screen items-center justify-center">
@@ -167,21 +180,17 @@ const ProductDetail = () => {
     const handleOrder = async () => {
         setOrdering(true);
         try {
-            const selectedOrder = await api.select(listing.id, quantity);
-            const confirmedOrder = await api.confirm({
-                items: selectedOrder.items,
-                billing: { name: "Retailer User", phone: "9876543210", address: "Grains Market" }
-            });
+            const confirmedOrder = await api.placeOrderDirect(listing.id, quantity);
 
             if (confirmedOrder && confirmedOrder.id) {
                 setOrderId(confirmedOrder.id);
                 // Trigger "Wowy" animation
                 setShowSuccessAnim(true);
-                
+
                 // Fire premium confetti burst
                 const duration = 2000;
                 const end = Date.now() + duration;
-                
+
                 const frame = () => {
                     confetti({
                         particleCount: 5,
@@ -197,13 +206,13 @@ const ProductDetail = () => {
                         origin: { x: 1 },
                         colors: ['#10b981', '#34d399', '#059669', '#ffffff']
                     });
-                    
+
                     if (Date.now() < end) {
                         requestAnimationFrame(frame);
                     }
                 };
                 frame();
-                
+
                 setTimeout(() => {
                     setShowSuccessAnim(false);
                     setConfirmed(true);
@@ -606,7 +615,7 @@ const ProductDetail = () => {
                                             <p className="text-slate-400 text-sm font-medium leading-relaxed">
                                                 Buy in bulk? Our AI can help you secure a <span className="text-emerald-400 font-bold">5-12% discount</span> based on current market trends.
                                             </p>
-                                            <button 
+                                            <button
                                                 onClick={() => setNegotiationOpen(true)}
                                                 className="w-full h-14 rounded-2xl bg-white hover:bg-emerald-50 text-slate-900 font-black uppercase tracking-widest text-[10px]"
                                             >
@@ -620,14 +629,14 @@ const ProductDetail = () => {
                                                     <p className="text-slate-500 font-bold text-[10px] uppercase tracking-widest">Your Proposal</p>
                                                     <p className="text-white font-black text-xl italic">₹{counterOffer} <span className="text-slate-500 font-normal text-xs">/ {listing.unit}</span></p>
                                                 </div>
-                                                <input 
-                                                    type="range" 
-                                                    min={Math.round(listing.pricePerUnit * 0.7)} 
-                                                    max={listing.pricePerUnit} 
+                                                <input
+                                                    type="range"
+                                                    min={Math.round(listing.pricePerUnit * 0.7)}
+                                                    max={listing.pricePerUnit}
                                                     step="1"
                                                     value={counterOffer}
                                                     onChange={(e) => setCounterOffer(Number(e.target.value))}
-                                                    className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-emerald-500" 
+                                                    className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-emerald-500"
                                                 />
                                                 <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                                                     <span>₹{Math.round(listing.pricePerUnit * 0.7)} (Min)</span>
@@ -643,13 +652,13 @@ const ProductDetail = () => {
                                             </div>
 
                                             <div className="flex gap-3">
-                                                <button 
+                                                <button
                                                     onClick={() => setNegotiationOpen(false)}
                                                     className="flex-1 h-12 rounded-xl border border-white/10 bg-transparent text-white hover:bg-white/5 font-black uppercase tracking-widest text-[10px]"
                                                 >
                                                     Cancel
                                                 </button>
-                                                <button 
+                                                <button
                                                     onClick={() => toast({ title: "Offer Sent", description: `Your counter-offer of ₹${counterOffer} has been sent to ${listing.farmerName}.` })}
                                                     className="flex-1 h-12 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black uppercase tracking-widest text-[10px] shadow-lg shadow-emerald-900/40"
                                                 >

@@ -12,13 +12,14 @@ import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "./LanguageSwitcher";
 import ThemeToggle from "./ThemeToggle";
 
+import { useQuery } from "@tanstack/react-query";
+
 const Navbar = () => {
     const { t } = useTranslation();
     const { user, isAuthenticated, logout } = useAuth();
     const location = useLocation();
     const navigate = useNavigate();
     const [mobileOpen, setMobileOpen] = useState(false);
-    const [activeOrdersCount, setActiveOrdersCount] = useState(0);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const profileRef = useRef(null);
 
@@ -32,28 +33,18 @@ const Navbar = () => {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    useEffect(() => {
-        if (!isAuthenticated) return;
+    const {
+        data: orders = []
+    } = useQuery({
+        queryKey: ["orders"],
+        queryFn: api.getOrders,
+        enabled: isAuthenticated,
+        refetchInterval: 10000,
+    });
 
-        const fetchOrders = async () => {
-            try {
-                const orders = await api.getOrders();
-                if (Array.isArray(orders)) {
-                    // Count active orders (pending, accepted, shipped)
-                    const count = orders.filter(o =>
-                        o && o.status && ["pending", "accepted", "shipped"].includes((o.status || "").toLowerCase())
-                    ).length;
-                    setActiveOrdersCount(count);
-                }
-            } catch (err) {
-                console.error("Failed to fetch orders for badge:", err);
-            }
-        };
-
-        fetchOrders();
-        const interval = setInterval(fetchOrders, 10000);
-        return () => clearInterval(interval);
-    }, [isAuthenticated]);
+    const activeOrdersCount = Array.isArray(orders)
+        ? orders.filter(o => o && o.status && ["pending", "accepted", "shipped"].includes((o.status || "").toLowerCase())).length
+        : 0;
 
     const links = [
         { to: "/home", label: t("nav.browse"), icon: ShoppingCart },
@@ -125,10 +116,10 @@ const Navbar = () => {
 
                     <div className="flex items-center gap-3 pl-2">
                         <div className="relative" ref={profileRef}>
-                                <button
-                                    onClick={() => setIsProfileOpen(!isProfileOpen)}
-                                    className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary border border-border/50 shadow-inner text-sm font-black text-foreground transition-transform hover:scale-105 active:scale-95"
-                                >
+                            <button
+                                onClick={() => setIsProfileOpen(!isProfileOpen)}
+                                className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary border border-border/50 shadow-inner text-sm font-black text-foreground transition-transform hover:scale-105 active:scale-95"
+                            >
                                 {user?.name?.charAt(0).toUpperCase()}
                             </button>
 

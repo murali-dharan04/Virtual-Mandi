@@ -16,6 +16,9 @@ import PageTransition from "@/components/PageTransition";
 const Listings = () => {
     const navigate = useNavigate();
     const { toast } = useToast();
+    const [listings, setListings] = useState([]);
+    const [error, setError] = useState(null);
+    const [filter, setFilter] = useState("all");
     const [search, setSearch] = useState("");
     const [isInitialLoading, setIsInitialLoading] = useState(true);
     const [isSyncing, setIsSyncing] = useState(false);
