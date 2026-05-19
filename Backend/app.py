@@ -61,6 +61,10 @@ with app.app_context():
     try:
         mongo.db.OTPs.create_index("created_at", expireAfterSeconds=300)
         mongo.db.OndcResponses.create_index("created_at", expireAfterSeconds=86400)
+        # Performance indexes on foreign keys
+        mongo.db.Listings.create_index("seller_id")
+        mongo.db.Orders.create_index("buyer_id")
+        mongo.db.Orders.create_index("seller_id")
     except:
         pass
 
