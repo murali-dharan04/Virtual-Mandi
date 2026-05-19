@@ -6,15 +6,22 @@ import { BASE_URL } from "./api";
  * Auto-reconnects with exponential backoff.
  */
 let socket = null;
+let currentToken = null;
 
 export function getSocket() {
-    if (!socket) {
-        const token = localStorage.getItem("buyerToken");
+    const token = localStorage.getItem("buyerToken");
+    if (!socket || token !== currentToken) {
+        if (socket) {
+            console.log("[Socket.IO] Disconnecting socket due to token change");
+            socket.disconnect();
+        }
+        currentToken = token;
+        console.log("[Socket.IO] Initializing socket connection...");
         socket = io(BASE_URL, {
             auth: { token },
             transports: ["polling", "websocket"],
             reconnection: true,
-            reconnectionAttempts: 5, // Changed from Infinity to 5
+            reconnectionAttempts: 5,
             reconnectionDelay: 1000,
             reconnectionDelayMax: 10000,
             autoConnect: true,
