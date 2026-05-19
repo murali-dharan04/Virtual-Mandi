@@ -51,7 +51,7 @@ const Dashboard = () => {
                         revenue: statsData.revenue || 0,
                         pendingOrders: statsData.pendingOrders || 0
                     });
-                } else if (statsData?.msg === "Token has expired") {
+                } else if (statsData?.error === "Invalid credentials or session expired") {
                     localStorage.removeItem("sellerToken");
                     localStorage.removeItem("sellerUser");
                     navigate("/login");

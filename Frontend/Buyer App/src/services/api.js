@@ -110,47 +110,25 @@ export const api = {
             body: JSON.stringify(payload)
         });
 
-        if (searchRes.error) return [];
+        if (searchRes.error || !searchRes.catalog) return [];
 
-        return new Promise((resolve) => {
-            const interval = setInterval(async () => {
-                try {
-                    const messages = await request(`/api/ondc/responses/${transactionId}`);
-                    if (messages.error) return;
-                    
-                    const onSearch = messages.find(m => m.context?.action === "on_search");
-
-                    if (onSearch) {
-                        clearInterval(interval);
-                        const providers = onSearch.message?.catalog?.["bpp/providers"] || [];
-                        const items = (providers[0]?.items || []).map(i => ({
-                            id: i.id || Math.random().toString(),
-                            cropName: i.descriptor?.name || "Unknown Crop",
-                            pricePerUnit: parseFloat(i.price?.value || 0) || 0,
-                            quantity: Number(i.quantity?.available?.count || 0) || 0,
-                            category: i.category || "Other",
-                            farmerName: i.farmer_name || "Local Farmer",
-                            farmerPhone: i.farmer_phone || "",
-                            whatsappNumber: i.whatsapp_number || "",
-                            unit: i.unit || "kg",
-                            distance: i.distance || 2.5,
-                            deliveryEstimate: i.delivery_estimate || "Tomorrow",
-                            location: i.location || "Local",
-                            qualityGrade: i.quality_grade || "A",
-                            imageUrl: i.image_url || "/placeholder.svg"
-                        }));
-                        resolve(items);
-                    }
-                } catch (pollErr) {
-                    console.error(`Error during poll: ${pollErr.message}`);
-                }
-            }, 1000);
-
-            setTimeout(() => {
-                clearInterval(interval);
-                resolve([]);
-            }, 10000);
-        });
+        const providers = searchRes.catalog["bpp/providers"] || [];
+        return (providers[0]?.items || []).map(i => ({
+            id: i.id || Math.random().toString(),
+            cropName: i.descriptor?.name || "Unknown Crop",
+            pricePerUnit: parseFloat(i.price?.value || 0) || 0,
+            quantity: Number(i.quantity?.available?.count || 0) || 0,
+            category: i.category || "Other",
+            farmerName: i.farmer_name || "Local Farmer",
+            farmerPhone: i.farmer_phone || "",
+            whatsappNumber: i.whatsapp_number || "",
+            unit: i.unit || "kg",
+            distance: i.distance || 2.5,
+            deliveryEstimate: i.delivery_estimate || "Tomorrow",
+            location: i.location || "Local",
+            qualityGrade: i.quality_grade || "A",
+            imageUrl: i.image_url || "/placeholder.svg"
+        }));
     },
     select: async (itemId, quantity = 1) => {
         const transactionId = Math.random().toString(36).substring(2) + Date.now().toString(36);
@@ -165,16 +143,9 @@ export const api = {
                 }
             }
         };
-        await request("/api/bpp/select", { method: "POST", body: JSON.stringify(payload) });
-        return new Promise(resolve => {
-            const interval = setInterval(async () => {
-                const data = await request(`/api/ondc/responses/${transactionId}`);
-                if (data.error) return;
-                const found = data.find(m => m.context.action === "on_select");
-                if (found) { clearInterval(interval); resolve(found.message.order); }
-            }, 1000);
-            setTimeout(() => { clearInterval(interval); resolve(null); }, 10000);
-        });
+        const selectRes = await request("/api/bpp/select", { method: "POST", body: JSON.stringify(payload) });
+        if (selectRes.error) return null;
+        return selectRes.order || null;
     },
     confirm: async (orderData) => {
         const transactionId = Math.random().toString(36).substring(2) + Date.now().toString(36);
@@ -182,16 +153,9 @@ export const api = {
             context: generateContext("confirm", transactionId),
             message: { order: orderData }
         };
-        await request("/api/bpp/confirm", { method: "POST", body: JSON.stringify(payload) });
-        return new Promise(resolve => {
-            const interval = setInterval(async () => {
-                const data = await request(`/api/ondc/responses/${transactionId}`);
-                if (data.error) return;
-                const found = data.find(m => m.context.action === "on_confirm");
-                if (found) { clearInterval(interval); resolve(found.message.order); }
-            }, 1000);
-            setTimeout(() => { clearInterval(interval); resolve(null); }, 10000);
-        });
+        const confirmRes = await request("/api/bpp/confirm", { method: "POST", body: JSON.stringify(payload) });
+        if (confirmRes.error) return null;
+        return confirmRes.order || null;
     },
     getListingById: async (id) => {
         return await request(`/api/listing/${id}`);

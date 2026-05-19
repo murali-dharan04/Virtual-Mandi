@@ -347,6 +347,10 @@ def google_auth():
 
         if user:
             user_id = user["_id"]
+            if user.get("role") and user.get("role") != role:
+                app_name = "Seller Dashboard" if user.get("role") == "farmer" else "Buyer App"
+                return jsonify({"error": f"Account mismatch. This is a {user.get('role')} account. Please use the {app_name}."}), 403
+
             # Attach Google info if the account was previously email-only
             if not user.get("googleId"):
                 mongo.db.Users.update_one(
@@ -1061,18 +1065,42 @@ def get_dashboard_stats():
 @jwt_required()
 def get_buyer_orders():
     user_id = get_jwt_identity()
-    orders = []
-    # Fetch orders for this buyer
-    for o in mongo.db.Orders.find({"buyer_id": ObjectId(user_id)}).sort("created_at", -1):
-        farmer_name = "Local Farmer"
-        seller_id = o.get("seller_id")
-        if seller_id:
+    
+    # 1. Fetch all orders for this buyer
+    orders_cursor = list(mongo.db.Orders.find({"buyer_id": ObjectId(user_id)}).sort("created_at", -1))
+    
+    # 2. Extract all distinct seller_ids
+    seller_ids = set()
+    for o in orders_cursor:
+        sid = o.get("seller_id")
+        if sid:
+            seller_ids.add(str(sid))
+            
+    # 3. Fetch all farmers in a single bulk query
+    farmers_map = {}
+    if seller_ids:
+        object_ids = []
+        for sid in seller_ids:
             try:
-                farmer = mongo.db.Users.find_one({"_id": ObjectId(seller_id)})
+                object_ids.append(ObjectId(sid))
             except Exception:
-                farmer = mongo.db.Users.find_one({"_id": seller_id})
-            if farmer:
-                farmer_name = farmer.get("name", "Local Farmer")
+                pass
+        
+        farmers = list(mongo.db.Users.find({
+            "$or": [
+                {"_id": {"$in": object_ids}},
+                {"_id": {"$in": list(seller_ids)}}
+            ]
+        }))
+        
+        for f in farmers:
+            farmers_map[str(f["_id"])] = f.get("name", "Local Farmer")
+            
+    # 4. Map the farmer names instantly from the map
+    orders = []
+    for o in orders_cursor:
+        seller_id = str(o.get("seller_id")) if o.get("seller_id") else None
+        farmer_name = farmers_map.get(seller_id, "Local Farmer") if seller_id else "Local Farmer"
 
         orders.append({
             "id": str(o["_id"]),
@@ -1106,23 +1134,43 @@ def bpp_search():
         item_name = str(descriptor.get("name") or "").lower()
 
         # Find matching listings
-        listings = []
         query = {}
         if item_name:
             query["name"] = {"$regex": item_name, "$options": "i"}
         
         found_docs = list(mongo.db.Listings.find(query))
 
+        # Bulk fetch all distinct sellers to solve the N+1 database bottleneck
+        seller_ids = set()
+        for l in found_docs:
+            sid = l.get("seller_id")
+            if sid:
+                seller_ids.add(sid)
+                
+        farmers_map = {}
+        if seller_ids:
+            object_ids = []
+            for sid in seller_ids:
+                try:
+                    object_ids.append(ObjectId(sid) if isinstance(sid, str) else sid)
+                except Exception:
+                    pass
+            
+            farmers = list(mongo.db.Users.find({
+                "$or": [
+                    {"_id": {"$in": object_ids}},
+                    {"_id": {"$in": list(seller_ids)}}
+                ]
+            }))
+            for f in farmers:
+                farmers_map[str(f["_id"])] = f
+
+        listings = []
         for l in found_docs:
             try:
-                # Safe lookup for farmer name
-                farmer = None
-                farmer_name = "Local Farmer"
-                seller_id = l.get("seller_id")
-                if seller_id:
-                    farmer = mongo.db.Users.find_one({"_id": seller_id})
-                    if farmer:
-                        farmer_name = farmer.get("name", "Local Farmer")
+                seller_id_str = str(l.get("seller_id")) if l.get("seller_id") else None
+                farmer = farmers_map.get(seller_id_str) if seller_id_str else None
+                farmer_name = farmer.get("name", "Local Farmer") if farmer else "Local Farmer"
                 
                 listings.append({
                     "id": str(l.get("_id")),
@@ -1143,20 +1191,24 @@ def bpp_search():
             except Exception as e:
                 print(f"Error processing listing {l.get('_id')}: {str(e)}")
 
-        # Store mock response
+        catalog_payload = {
+            "catalog": {
+                "bpp/providers": [
+                    {"items": listings}
+                ]
+            }
+        }
+        # Store mock response for other legacy clients
         ondc_responses[transaction_id] = [
             {
                 "context": {"action": "on_search", "transaction_id": transaction_id},
-                "message": {
-                    "catalog": {
-                        "bpp/providers": [
-                            {"items": listings}
-                        ]
-                    }
-                }
+                "message": catalog_payload
             }
         ]
-        return jsonify({"message": "Search initiated"}), 200
+        return jsonify({
+            "message": "Search initiated",
+            "catalog": catalog_payload["catalog"]
+        }), 200
     except Exception as e:
         print(f"Critical error in bpp_search: {str(e)}")
         return jsonify({"error": str(e)}), 500
@@ -1587,23 +1639,28 @@ def bpp_select():
     if not listing:
         return jsonify({"error": "Listing not found"}), 404
 
+    order_payload = {
+        "items": [{
+            "id": item_id, 
+            "title": listing["name"], 
+            "price": listing["price_per_unit"],
+            "quantity": {"count": quantity}
+        }],
+        "quote": {"price": {"value": listing["price_per_unit"] * quantity}}
+    }
+
     ondc_responses[transaction_id] = [
         {
             "context": {"action": "on_select", "transaction_id": transaction_id},
             "message": {
-                "order": {
-                    "items": [{
-                        "id": item_id, 
-                        "title": listing["name"], 
-                        "price": listing["price_per_unit"],
-                        "quantity": {"count": quantity}
-                    }],
-                    "quote": {"price": {"value": listing["price_per_unit"] * quantity}}
-                }
+                "order": order_payload
             }
         }
     ]
-    return jsonify({"message": "Selection initiated"}), 200
+    return jsonify({
+        "message": "Selection initiated",
+        "order": order_payload
+    }), 200
 
 @app.route("/api/bpp/confirm", methods=["POST"])
 @jwt_required()
@@ -1667,20 +1724,26 @@ def bpp_confirm():
         "seller_id": str(listing["seller_id"])
     })
 
+    confirmed_order_payload = {
+        "id": str(inserted_id),
+        "long_order_id": order["order_id_str"],
+        "state": "Confirmed",
+        **order_data
+    }
+
     ondc_responses[transaction_id] = [
         {
             "context": {"action": "on_confirm", "transaction_id": transaction_id},
             "message": {
-                "order": {
-                    "id": str(inserted_id),
-                    "long_order_id": order["order_id_str"],
-                    "state": "Confirmed",
-                    **order_data
-                }
+                "order": confirmed_order_payload
             }
         }
     ]
-    return jsonify({"message": "Order confirmed and saved", "order_id": str(inserted_id)}), 200
+    return jsonify({
+        "message": "Order confirmed and saved", 
+        "order_id": str(inserted_id),
+        "order": confirmed_order_payload
+    }), 200
 
 # -------------------- AI SELLER ASSISTANT --------------------
 
@@ -2163,7 +2226,11 @@ def get_transactions():
     """Get unified transaction history (completed/paid orders)"""
     try:
         user_id = get_jwt_identity()
-        user = mongo.db.Users.find_one({"_id": ObjectId(user_id)})
+        user = None
+        try:
+            user = mongo.db.Users.find_one({"_id": ObjectId(user_id)})
+        except Exception:
+            pass
         
         if not user:
             # Fallback if user object is missing but ID exists in JWT
