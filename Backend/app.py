@@ -1013,6 +1013,31 @@ def update_order_status(id):
                     {"$inc": {"quantity": int(order.get("quantity", 0))}}
                 )
                 log_to_file(f"Restore result matched: {res.matched_count} modified: {res.modified_count}")
+                
+                # Fetch and emit real-time listing update to all connected clients
+                updated_listing = mongo.db.Listings.find_one({"_id": ObjectId(str(listing_id))})
+                if updated_listing:
+                    try:
+                        seller = mongo.db.Users.find_one({"_id": ObjectId(updated_listing["seller_id"])})
+                    except Exception:
+                        seller = mongo.db.Users.find_one({"_id": updated_listing["seller_id"]})
+                    farmer_phone = seller.get("phone", "") if seller else ""
+                    whatsapp_number = seller.get("whatsapp_number", "") if seller else ""
+                    
+                    socketio.emit("listing_updated", {
+                        "id": str(updated_listing["_id"]),
+                        "cropName": updated_listing.get("name"),
+                        "category": updated_listing.get("category"),
+                        "quantity": int(updated_listing.get("quantity", 0)),
+                        "pricePerUnit": float(updated_listing.get("price_per_unit", 0)),
+                        "location": updated_listing.get("location"),
+                        "qualityGrade": updated_listing.get("quality_grade"),
+                        "unit": updated_listing.get("unit", "kg"),
+                        "imageUrl": updated_listing.get("image_url"),
+                        "views": updated_listing.get("views", 0),
+                        "farmerPhone": farmer_phone,
+                        "whatsappNumber": whatsapp_number
+                    })
             
             mongo.db.Notifications.insert_one({
                 "user_id": order["buyer_id"],
@@ -1240,7 +1265,7 @@ def get_mandi_prices(commodity):
         # Updated Resource ID per user request: 9ef84268-d588-465a-a308-a864a43d0070
         url = f"https://api.data.gov.in/resource/9ef84268-d588-465a-a308-a864a43d0070?api-key={api_key}&format=json&filters[commodity]={commodity}"
         
-        response = requests.get(url)
+        response = requests.get(url, timeout=5)
         data = response.json()
         
         real_prices = []
@@ -1707,6 +1732,31 @@ def bpp_confirm():
         {"_id": ObjectId(item_id)},
         {"$inc": {"quantity": -int(order["quantity"])}}
     )
+    
+    # Emit real-time listing_updated event to all clients to synchronize stock levels instantly
+    updated_listing = mongo.db.Listings.find_one({"_id": ObjectId(item_id)})
+    if updated_listing:
+        try:
+            seller = mongo.db.Users.find_one({"_id": ObjectId(updated_listing["seller_id"])})
+        except Exception:
+            seller = mongo.db.Users.find_one({"_id": updated_listing["seller_id"]})
+        farmer_phone = seller.get("phone", "") if seller else ""
+        whatsapp_number = seller.get("whatsapp_number", "") if seller else ""
+        
+        socketio.emit("listing_updated", {
+            "id": str(updated_listing["_id"]),
+            "cropName": updated_listing.get("name"),
+            "category": updated_listing.get("category"),
+            "quantity": int(updated_listing.get("quantity", 0)),
+            "pricePerUnit": float(updated_listing.get("price_per_unit", 0)),
+            "location": updated_listing.get("location"),
+            "qualityGrade": updated_listing.get("quality_grade"),
+            "unit": updated_listing.get("unit", "kg"),
+            "imageUrl": updated_listing.get("image_url"),
+            "views": updated_listing.get("views", 0),
+            "farmerPhone": farmer_phone,
+            "whatsappNumber": whatsapp_number
+        })
 
     # Trigger notification for seller (New Order Received)
     mongo.db.Notifications.insert_one({

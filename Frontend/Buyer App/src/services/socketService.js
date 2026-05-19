@@ -12,7 +12,7 @@ export function getSocket() {
         const token = localStorage.getItem("buyerToken");
         socket = io(BASE_URL, {
             auth: { token },
-            transports: ["websocket"],
+            transports: ["polling", "websocket"],
             reconnection: true,
             reconnectionAttempts: 5, // Changed from Infinity to 5
             reconnectionDelay: 1000,
