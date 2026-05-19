@@ -54,7 +54,7 @@ const Home = () => {
             setIsLoading(true);
             setLoadError(null);
             const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 15000);
+            const timeout = setTimeout(() => controller.abort(), 60000); // 60s for cold starts
             try {
                 const results = await api.search(search, { signal: controller.signal });
                 clearTimeout(timeout);
@@ -62,7 +62,7 @@ const Home = () => {
             } catch (err) {
                 clearTimeout(timeout);
                 if (err.name === "AbortError") {
-                    setLoadError("Server is waking up — Render cold-start takes ~30s. Click Retry!");
+                    setLoadError("Server is taking longer than usual to respond (Cold Start). Please retry.");
                 } else {
                     setLoadError("Could not reach the server. Check your internet connection.");
                 }

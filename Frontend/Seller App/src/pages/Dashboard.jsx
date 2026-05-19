@@ -35,15 +35,28 @@ const Dashboard = () => {
     const sellerName = sellerUser?.name?.split(" ")[0] || "Farmer";
     const sellerLocation = sellerUser?.location || "Delhi";
 
+    const [isFetching, setIsFetching] = useState(false);
+
     useEffect(() => {
-        const load = async () => {
+        const load = async (isBackground = false) => {
+            if (isFetching) return;
+            setIsFetching(true);
+
+            if (!isBackground && stats.activeListings === 0 && stats.totalOrders === 0) {
+                setIsLoading(true);
+            }
+
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 60000);
+
             try {
                 const [statsData, ordersData, marketData] = await Promise.all([
-                    sellerApi.getDashboardStats(),
-                    sellerApi.getOrders(),
-                    sellerApi.getMarketPrices("dl")
+                    sellerApi.getDashboardStats({ signal: controller.signal }),
+                    sellerApi.getOrders({ signal: controller.signal }),
+                    sellerApi.getMarketPrices("dl") // No major timeout needed for mock-fallback endpoint
                 ]);
-                
+                clearTimeout(timeout);
+
                 if (statsData && !statsData.error && !statsData.msg) {
                     setStats({
                         activeListings: statsData.activeListings || 0,
@@ -56,32 +69,40 @@ const Dashboard = () => {
                     localStorage.removeItem("sellerUser");
                     navigate("/login");
                 }
-                
+
                 if (Array.isArray(ordersData)) {
-                    setRecentOrders(ordersData.filter(o => o.status === 'Pending').slice(0, 5));
+                    setRecentOrders(ordersData.filter(o => {
+                        const status = (o.status || "").toLowerCase();
+                        return status === 'pending';
+                    }).slice(0, 5));
                 }
                 if (marketData && marketData.data && Array.isArray(marketData.data)) {
                     setMarketPrices(marketData.data.slice(0, 3));
                 }
-            } catch (e) { console.error(e); }
-            finally { setIsLoading(false); }
+            } catch (e) {
+                console.error("Dashboard load error:", e);
+            }
+            finally {
+                setIsLoading(false);
+                setIsFetching(false);
+            }
         };
         load();
-        const interval = setInterval(load, 30000);
+        const interval = setInterval(() => load(true), 30000);
         return () => clearInterval(interval);
     }, [navigate]);
 
     return (
         <PageTransition>
             <div className="max-w-5xl mx-auto space-y-6 pb-24 px-4 bg-[#f8f9fa] min-h-screen">
-                
+
                 {/* 1. HERO SECTION */}
                 <div className="bg-gradient-to-r from-[#1b5e3a] to-[#268051] rounded-[2rem] p-6 md:p-8 text-white relative shadow-xl mt-4">
                     <div className="inline-flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest mb-4 backdrop-blur-sm border border-white/10">
                         <span className="h-1.5 w-1.5 rounded-full bg-[#fde047] shadow-[0_0_8px_#fde047]"></span>
                         GOOD MORNING ☀️
                     </div>
-                    
+
                     <div className="flex justify-between items-start">
                         <div>
                             <h1 className="text-3xl md:text-5xl font-serif leading-tight">
@@ -97,7 +118,7 @@ const Dashboard = () => {
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div className="relative shrink-0">
                             <div className="h-16 w-16 md:h-20 md:w-20 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-2xl md:text-4xl font-serif font-bold backdrop-blur-md shadow-inner">
                                 {sellerName[0]}
@@ -308,8 +329,8 @@ const Dashboard = () => {
                                     </p>
                                 </div>
                             </div>
-                            <Button 
-                                variant="outline" 
+                            <Button
+                                variant="outline"
                                 className="w-full mt-6 h-12 rounded-xl border-dashed border-2 border-slate-200 text-slate-500 font-bold text-xs"
                                 onClick={() => navigate('/dashboard/weather')}
                             >

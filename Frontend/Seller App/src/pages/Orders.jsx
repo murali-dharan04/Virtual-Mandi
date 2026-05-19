@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-    CheckCircle2, XCircle, ChevronRight, ShoppingCart, 
-    User, Package, IndianRupee, Calendar, Clock, Filter 
+import {
+    CheckCircle2, XCircle, ChevronRight, ShoppingCart,
+    User, Package, IndianRupee, Calendar, Clock, Filter
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,21 +16,29 @@ const Orders = () => {
     const navigate = useNavigate();
     const { toast } = useToast();
     const [orders, setOrders] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [filter, setFilter] = useState("all");
+    const [isInitialLoading, setIsInitialLoading] = useState(true);
+    const [isSyncing, setIsSyncing] = useState(false);
+    const [isFetching, setIsFetching] = useState(false); // Guard for concurrent fetches
 
-    const fetchOrders = async () => {
-        setIsLoading(true);
+    const fetchOrders = async (isBackground = false) => {
+        if (isFetching) return;
+        setIsFetching(true);
+
+        if (!isBackground && orders.length === 0) {
+            setIsInitialLoading(true);
+        }
+        setIsSyncing(true);
         setError(null);
+
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 12000);
+        const timeout = setTimeout(() => controller.abort(), 60000); // 60s for cold starts
+
         try {
             const data = await sellerApi.getOrders({ signal: controller.signal });
             clearTimeout(timeout);
             if (Array.isArray(data)) {
                 setOrders(data.map(o => ({
-                    id: o.id || o._id,          // backend returns both "id" and "_id"
+                    id: o.id || o._id,
                     cropName: o.crop_name || o.cropName || "",
                     buyerName: o.buyer_name || o.buyerName || "Anonymous",
                     quantity: o.quantity || 0,
@@ -45,19 +53,21 @@ const Orders = () => {
         } catch (err) {
             clearTimeout(timeout);
             if (err.name === "AbortError") {
-                setError("Server is waking up (Render cold-start). Please retry in a moment.");
+                setError("Server is taking longer than usual to respond (Cold Start). Please wait a moment.");
             } else {
                 setError("Failed to load orders. Check your connection.");
             }
-            console.error(err);
+            console.error("Fetch error:", err);
         } finally {
-            setIsLoading(false);
+            setIsInitialLoading(false);
+            setIsSyncing(false);
+            setIsFetching(false);
         }
     };
 
     useEffect(() => {
         fetchOrders();
-        const interval = setInterval(fetchOrders, 15000);
+        const interval = setInterval(() => fetchOrders(true), 15000);
         return () => clearInterval(interval);
     }, []);
 
@@ -87,12 +97,12 @@ const Orders = () => {
         return true;
     });
 
-    if (isLoading) {
+    if (isInitialLoading) {
         return (
             <div className="flex flex-col items-center justify-center py-40 gap-4">
                 <div className="h-10 w-10 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent" />
                 <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Syncing Orders...</p>
-                <p className="text-xs text-slate-400">Server may be waking up — this takes ~30s on first load</p>
+                <p className="text-xs text-slate-400">Connecting to server — this takes ~30s on first load</p>
             </div>
         );
     }
@@ -125,7 +135,7 @@ const Orders = () => {
                     </div>
                     <div className="flex gap-1">
                         {['all', 'pending', 'completed'].map((f) => (
-                            <button 
+                            <button
                                 key={f}
                                 onClick={() => setFilter(f)}
                                 className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${filter === f ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900' : 'bg-slate-100 text-slate-400 dark:bg-slate-800'}`}
@@ -156,7 +166,7 @@ const Orders = () => {
                 <div className="space-y-3 px-2">
                     <AnimatePresence>
                         {filtered.map((order) => (
-                            <motion.div 
+                            <motion.div
                                 key={order.id}
                                 layout
                                 initial={{ opacity: 0, y: 10 }}
@@ -208,16 +218,16 @@ const Orders = () => {
 
                                     {(order.status === "pending" || order.status === "Pending") && (
                                         <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                                            <Button 
-                                                size="sm" 
+                                            <Button
+                                                size="sm"
                                                 className="h-8 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-[9px] font-black uppercase tracking-widest shadow-md"
                                                 onClick={(e) => handleUpdateStatus(e, order.id, "accepted")}
                                             >
                                                 Accept
                                             </Button>
-                                            <Button 
+                                            <Button
                                                 variant="outline"
-                                                size="sm" 
+                                                size="sm"
                                                 className="h-8 px-3 rounded-lg border-rose-100 text-rose-500 hover:bg-rose-50 text-[9px] font-black uppercase tracking-widest"
                                                 onClick={(e) => handleUpdateStatus(e, order.id, "rejected")}
                                             >

@@ -677,20 +677,21 @@ def add_listing():
                 {"$push": {"listings": listing_id}}
             )
 
-        # Trigger notification for all buyers (New Produce Available)
-        buyer_query = {"role": "buyer"}
-        all_buyers = mongo.db.Users.find(buyer_query)
-        notification_base = {
-            "type": "new_listing",
-            "title": "New Produce Available",
-            "message": f"Farmer has listed new {crop_name}. Check it out!",
-            "read": False,
-            "created_at": datetime.utcnow()
-        }
-        for buyer_user in all_buyers:
-            notif = notification_base.copy()
-            notif["user_id"] = buyer_user["_id"]
-            mongo.db.Notifications.insert_one(notif)
+        # Bulk create notifications for all buyers
+        all_buyer_ids = [b["_id"] for b in mongo.db.Users.find({"role": "buyer"}, {"_id": 1})]
+        if all_buyer_ids:
+            notifications = [
+                {
+                    "user_id": bid,
+                    "type": "new_listing",
+                    "title": "New Produce Available",
+                    "message": f"Farmer has listed new {crop_name}. Check it out!",
+                    "read": False,
+                    "created_at": datetime.utcnow()
+                }
+                for bid in all_buyer_ids
+            ]
+            mongo.db.Notifications.insert_many(notifications)
 
         # Emit real-time event to all connected clients
         socketio.emit("listing_created", {
@@ -1268,19 +1269,32 @@ def bpp_search():
         descriptor = item.get("descriptor", {})
         item_name = str(descriptor.get("name") or "").lower()
 
-        # Build query — only fetch in-stock listings (quantity > 0)
-        query = {"quantity": {"$gt": 0}}
+        # Fetch potential listings — we'll filter by quantity in Python to handle type inconsistencies
+        query = {}
         if item_name:
             query["name"] = {"$regex": item_name, "$options": "i"}
         
-        # Projection: only transfer fields needed by frontend — huge speed gain
         projection = {
             "_id": 1, "name": 1, "price_per_unit": 1, "quantity": 1,
             "location": 1, "quality_grade": 1, "category": 1,
             "unit": 1, "image_url": 1, "seller_id": 1,
             "distance": 1, "delivery_estimate": 1
         }
-        found_docs = list(mongo.db.Listings.find(query, projection).limit(200))
+        
+        all_docs = list(mongo.db.Listings.find(query, projection).sort("_id", -1).limit(500))
+        
+        # Robust filtering: ensure quantity is > 0 regardless of storage type (int vs string)
+        found_docs = []
+        for d in all_docs:
+            try:
+                q = d.get("quantity", 0)
+                if isinstance(q, str):
+                    q = int(q) if q.strip() else 0
+                if q > 0:
+                    found_docs.append(d)
+                if len(found_docs) >= 200: break
+            except (ValueError, TypeError):
+                continue
 
         # Bulk fetch all distinct sellers — single query, no N+1
         seller_obj_ids = []

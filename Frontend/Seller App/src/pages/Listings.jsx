@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { 
-    Plus, Search, Edit2, Trash2, Package, MapPin, 
-    IndianRupee, Boxes, Filter, MoreVertical, X 
+import {
+    Plus, Search, Edit2, Trash2, Package, MapPin,
+    IndianRupee, Boxes, Filter, MoreVertical, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,16 +17,23 @@ const Listings = () => {
     const navigate = useNavigate();
     const { toast } = useToast();
     const [search, setSearch] = useState("");
-    const [listings, setListings] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [filter, setFilter] = useState("all"); // all, active, sold
+    const [isInitialLoading, setIsInitialLoading] = useState(true);
+    const [isSyncing, setIsSyncing] = useState(false);
+    const [isFetching, setIsFetching] = useState(false);
 
-    const fetchListings = async () => {
-        setIsLoading(true);
+    const fetchListings = async (isBackground = false) => {
+        if (isFetching) return;
+        setIsFetching(true);
+
+        if (!isBackground && listings.length === 0) {
+            setIsInitialLoading(true);
+        }
+        setIsSyncing(true);
         setError(null);
+
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 12000);
+        const timeout = setTimeout(() => controller.abort(), 60000);
+
         try {
             const data = await sellerApi.getListings({ signal: controller.signal });
             clearTimeout(timeout);
@@ -47,18 +54,22 @@ const Listings = () => {
         } catch (err) {
             clearTimeout(timeout);
             if (err.name === "AbortError") {
-                setError("Server is waking up (Render cold-start). Please retry in a moment.");
+                setError("Server is taking longer than usual to respond (Cold Start). Please wait a moment.");
             } else {
                 setError("Failed to load listings. Check your connection.");
             }
-            console.error(err);
+            console.error("Fetch error:", err);
         } finally {
-            setIsLoading(false);
+            setIsInitialLoading(false);
+            setIsSyncing(false);
+            setIsFetching(false);
         }
     };
 
     useEffect(() => {
         fetchListings();
+        const interval = setInterval(() => fetchListings(true), 30000);
+        return () => clearInterval(interval);
     }, []);
 
     const handleDelete = async (id) => {
@@ -83,12 +94,12 @@ const Listings = () => {
         value: listings.reduce((sum, l) => sum + (l.quantity * l.pricePerUnit), 0)
     };
 
-    if (isLoading) {
+    if (isInitialLoading) {
         return (
             <div className="flex flex-col items-center justify-center py-40 gap-4">
                 <div className="h-10 w-10 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent" />
                 <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Loading Crops...</p>
-                <p className="text-xs text-slate-400">Server may be waking up — this takes ~30s on first load</p>
+                <p className="text-xs text-slate-400">Connecting to server — this takes ~30s on first load</p>
             </div>
         );
     }
@@ -119,7 +130,7 @@ const Listings = () => {
                         <h1 className="text-xl font-black text-slate-900 dark:text-white uppercase italic tracking-tight leading-none">Your Crops</h1>
                         <p className="text-[10px] font-bold text-slate-500 mt-1 uppercase tracking-widest">Manage Inventory</p>
                     </div>
-                    <Button 
+                    <Button
                         onClick={() => navigate("/listings/new")}
                         className="h-10 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 font-black uppercase text-[10px] tracking-widest shadow-lg shadow-emerald-500/20"
                     >
@@ -147,7 +158,7 @@ const Listings = () => {
                 <div className="flex gap-2 mb-6 px-2">
                     <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                        <Input 
+                        <Input
                             placeholder="Search crop..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
@@ -170,7 +181,7 @@ const Listings = () => {
                 <div className="grid grid-cols-2 gap-3 px-2">
                     <AnimatePresence>
                         {filtered.map((crop) => (
-                            <motion.div 
+                            <motion.div
                                 key={crop.id}
                                 layout
                                 initial={{ opacity: 0, scale: 0.9 }}
@@ -199,17 +210,17 @@ const Listings = () => {
                                             <p className="text-[10px] font-black text-slate-900 dark:text-white">₹{crop.pricePerUnit}/{crop.unit}</p>
                                         </div>
                                         <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                                            <Button 
-                                                variant="ghost" 
-                                                size="icon" 
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
                                                 className="h-7 w-7 rounded-md hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-600"
                                                 onClick={() => navigate(`/listings/edit/${crop.id}`)}
                                             >
                                                 <Edit2 className="h-3.5 w-3.5" />
                                             </Button>
-                                            <Button 
-                                                variant="ghost" 
-                                                size="icon" 
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
                                                 className="h-7 w-7 rounded-md hover:bg-rose-50 dark:hover:bg-rose-900/20 text-rose-500"
                                                 onClick={() => handleDelete(crop.id)}
                                             >
