@@ -52,7 +52,7 @@ const FluidParticles = ({ mouseX, mouseY }) => {
             const dx = p.x - mx;
             const dy = p.y - my;
             const dist = Math.sqrt(dx * dx + dy * dy);
-            
+
             if (dist < repelRadius && dist > 0) {
                 const force = (repelRadius - dist) / repelRadius;
                 p.vx += (dx / dist) * force * repelForce;
@@ -117,25 +117,9 @@ const Login = () => {
     const spotlightX = useTransform(globalMouseX, x => `${x}px`);
     const spotlightY = useTransform(globalMouseY, y => `${y}px`);
 
-    // Weather Sync API
+    // Weather preview on login is disabled to improve page load speed
     useEffect(() => {
-        const fetchWeather = async () => {
-            try {
-                // Using wttr.in for simple IP-based weather JSON without keys
-                const res = await fetch("https://wttr.in/?format=j1");
-                const data = await res.json();
-                const desc = data.current_condition[0].weatherDesc[0].value.toLowerCase();
-                if (desc.includes("rain") || desc.includes("shower") || desc.includes("drizzle")) {
-                    setWeatherCond("rain");
-                } else {
-                    setWeatherCond("clear");
-                }
-            } catch (err) {
-                console.log("Weather fetch failed, falling back to clear");
-                setWeatherCond("clear");
-            }
-        };
-        fetchWeather();
+        setWeatherCond("clear");
     }, []);
 
     // Dynamic Typing Placeholder
@@ -215,8 +199,8 @@ const Login = () => {
 
     const currentMonth = new Date().getMonth();
     const isAutumnOrWinter = currentMonth >= 8 || currentMonth <= 1;
-    const themeGradient = isAutumnOrWinter 
-        ? "from-[#451a03]/90 via-[#78350f]/60" 
+    const themeGradient = isAutumnOrWinter
+        ? "from-[#451a03]/90 via-[#78350f]/60"
         : "from-[#064e3b]/90 via-[#0f766e]/60";
 
     const handleSubmit = async (e) => {
@@ -226,7 +210,7 @@ const Login = () => {
         try {
             await login(email, password);
             toast.success("Welcome back to Virtual Mandi!");
-            navigate("/"); 
+            navigate("/");
         } catch {
             toast.error("Invalid credentials. Please try again.");
         } finally {
@@ -262,34 +246,34 @@ const Login = () => {
                 @keyframes ripple { to { transform: scale(4); opacity: 0; } }
             `}</style>
 
-            <div 
+            <div
                 className="min-h-screen lg:h-screen font-poppins relative flex flex-col lg:flex-row overflow-hidden bg-[#1a0f08] selection:bg-[#f59e0b]/30"
                 onMouseMove={handleGlobalMouseMove}
             >
                 {/* Slow-Motion 4K Video Background */}
                 <div className="absolute inset-0 z-0 bg-black">
-                    <video 
-                        autoPlay 
-                        loop 
-                        muted 
-                        playsInline 
+                    <video
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
                         className="w-full h-full object-cover opacity-80 mix-blend-screen"
                         poster="https://images.unsplash.com/photo-1610348725531-843dff563e2c?q=80&w=2070&auto=format&fit=crop"
                     >
                         <source src="https://assets.mixkit.co/videos/preview/mixkit-water-falling-on-fresh-vegetables-4187-large.mp4" type="video/mp4" />
                     </video>
-                    
+
                     {/* Gradients to blend video perfectly */}
                     <div className="absolute inset-0 bg-gradient-to-br from-[#1c0d03]/95 via-[#451a03]/80 to-transparent mix-blend-multiply" />
                     <div className={`absolute inset-0 bg-gradient-to-b lg:bg-gradient-to-r ${themeGradient} to-transparent transition-colors duration-1000`} />
                     <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px]" />
                 </div>
-                
+
                 {/* Fluid Physics Particles */}
                 <FluidParticles mouseX={globalMouseX} mouseY={globalMouseY} />
 
                 {/* Spotlight Global Hover Effect */}
-                <motion.div 
+                <motion.div
                     className="absolute inset-0 pointer-events-none z-30 opacity-50"
                     style={{
                         background: `radial-gradient(circle 600px at var(--x) var(--y), rgba(255,255,255,0.1), transparent 80%)`,
@@ -299,7 +283,7 @@ const Login = () => {
                 />
 
                 {/* Left Side: Welcome Branding */}
-                <motion.div 
+                <motion.div
                     variants={fadeReveal}
                     initial="hidden"
                     animate="show"
@@ -320,11 +304,11 @@ const Login = () => {
                         <ShoppingBag className="h-3.5 w-3.5 text-[#fcd34d]" />
                         <span className="text-white/90 text-[10px] lg:text-xs font-black uppercase tracking-[0.2em]">Farm Fresh Produce</span>
                     </div>
-                    
+
                     <h1 className="text-[32px] sm:text-4xl lg:text-6xl font-black text-white leading-[1.1] tracking-tight drop-shadow-xl max-w-[600px]">
                         Fresh harvest, delivered right to your <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#fcd34d] via-[#f59e0b] to-[#fbbf24] animate-gradient-text">door.</span>
                     </h1>
-                    
+
                     <p className="mt-4 lg:mt-6 text-white/80 font-medium text-sm lg:text-base max-w-md leading-relaxed drop-shadow-md border-l-2 border-[#f59e0b] pl-4">
                         Skip the middleman. Buy organic vegetables and fruits directly from Indian farmers at fair prices.
                     </p>
@@ -352,7 +336,7 @@ const Login = () => {
 
                 {/* Right Side: 3D Tilt Login Card */}
                 <div className="relative z-20 w-full lg:w-[45%] flex items-center justify-center px-4 pb-8 lg:p-12 h-auto lg:h-full flex-1 perspective-[1500px]">
-                    <motion.div 
+                    <motion.div
                         variants={slideUpSnappy}
                         initial="hidden"
                         animate="show"
@@ -363,7 +347,7 @@ const Login = () => {
                         className="w-full max-w-[420px] relative"
                     >
                         <div className="w-full bg-white/80 backdrop-blur-3xl rounded-[2rem] p-6 sm:p-10 shadow-[0_20px_60px_rgba(0,0,0,0.4)] border border-white/40 overflow-hidden">
-                            <motion.div 
+                            <motion.div
                                 className="absolute inset-0 pointer-events-none mix-blend-overlay z-20 opacity-50"
                                 style={{
                                     background: `radial-gradient(circle at var(--x, 50%) var(--y, 50%), rgba(255,255,255,0.9) 0%, transparent 70%)`,
@@ -415,7 +399,7 @@ const Login = () => {
                                     <label className="flex items-center gap-2 cursor-pointer group">
                                         <div className="relative flex items-center justify-center">
                                             <input type="checkbox" className="peer w-4 h-4 appearance-none rounded border-2 border-[#b45309]/30 checked:border-[#d97706] checked:bg-[#d97706] transition-all cursor-pointer bg-white" />
-                                            <svg className="absolute w-2.5 h-2.5 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity" viewBox="0 0 14 10" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 5L5 9L13 1" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                            <svg className="absolute w-2.5 h-2.5 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity" viewBox="0 0 14 10" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 5L5 9L13 1" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
                                         </div>
                                         <span className="text-[11px] font-bold text-[#b45309]/80 group-hover:text-[#92400e] transition-colors">Remember Me</span>
                                     </label>
@@ -433,8 +417,8 @@ const Login = () => {
                                             const circle = document.createElement("span");
                                             const d = Math.max(btn.clientWidth, btn.clientHeight);
                                             circle.style.width = circle.style.height = `${d}px`;
-                                            circle.style.left = `${e.clientX - btn.getBoundingClientRect().left - d/2}px`;
-                                            circle.style.top = `${e.clientY - btn.getBoundingClientRect().top - d/2}px`;
+                                            circle.style.left = `${e.clientX - btn.getBoundingClientRect().left - d / 2}px`;
+                                            circle.style.top = `${e.clientY - btn.getBoundingClientRect().top - d / 2}px`;
                                             circle.classList.add("ripple");
                                             if (btn.getElementsByClassName("ripple")[0]) btn.getElementsByClassName("ripple")[0].remove();
                                             btn.appendChild(circle);

@@ -126,7 +126,7 @@ export function AppLayout({ children }) {
         };
 
         fetchStats();
-        const interval = setInterval(fetchStats, 10000);
+        const interval = setInterval(fetchStats, 60000); // 60s
         return () => clearInterval(interval);
     }, []);
 
@@ -240,7 +240,7 @@ export function AppLayout({ children }) {
                     >
                         <Menu className="h-5 w-5" />
                     </button>
-                    
+
                     <div className="flex-1 hidden md:block">
                         <div className="flex items-center gap-3">
                             <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
@@ -250,7 +250,7 @@ export function AppLayout({ children }) {
 
                     <div className="flex items-center gap-4 md:gap-8">
                         <ThemeToggle />
-                        
+
                         <div className="relative group">
                             <NotificationCenter />
                             {pendingOrders > 0 && (

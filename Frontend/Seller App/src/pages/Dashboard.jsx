@@ -32,7 +32,7 @@ const Dashboard = () => {
     const { data: statsData, isLoading: statsLoading } = useQuery({
         queryKey: ["seller-stats"],
         queryFn: () => sellerApi.getDashboardStats(),
-        refetchInterval: 30000,
+        refetchInterval: 120000, // Reduced to 2 minutes
     });
 
     const stats = {
@@ -46,7 +46,7 @@ const Dashboard = () => {
     const { data: ordersData = [], isLoading: ordersLoading } = useQuery({
         queryKey: ["seller-orders"],
         queryFn: () => sellerApi.getOrders(),
-        refetchInterval: 30000,
+        refetchInterval: 120000, // Reduced to 2 minutes
     });
 
     const recentOrders = Array.isArray(ordersData)

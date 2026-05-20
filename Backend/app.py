@@ -682,21 +682,31 @@ def add_listing():
                 {"$push": {"listings": listing_id}}
             )
 
-        # Bulk create notifications for all buyers
-        all_buyer_ids = [b["_id"] for b in mongo.db.Users.find({"role": "buyer"}, {"_id": 1})]
-        if all_buyer_ids:
-            notifications = [
-                {
-                    "user_id": bid,
-                    "type": "new_listing",
-                    "title": "New Produce Available",
-                    "message": f"Farmer has listed new {crop_name}. Check it out!",
-                    "read": False,
-                    "created_at": datetime.utcnow()
-                }
-                for bid in all_buyer_ids
-            ]
-            mongo.db.Notifications.insert_many(notifications)
+        # Bulk create notifications for all buyers in a background thread to avoid blocking response
+        def notify_all_buyers(listing_id, crop_name, farmer_name, phone, whatsapp):
+            with app.app_context(): # Ensure we have app context in thread
+                try:
+                    all_buyer_ids = [b["_id"] for b in mongo.db.Users.find({"role": "buyer"}, {"_id": 1})]
+                    if all_buyer_ids:
+                        notifications = [
+                            {
+                                "user_id": bid,
+                                "type": "new_listing",
+                                "title": "New Produce Available",
+                                "message": f"Farmer has listed new {crop_name}. Check it out!",
+                                "read": False,
+                                "created_at": datetime.utcnow()
+                            }
+                            for bid in all_buyer_ids
+                        ]
+                        mongo.db.Notifications.insert_many(notifications)
+                except Exception as e:
+                    print(f"Async Notification Error: {e}")
+
+        import threading
+        threading.Thread(target=notify_all_buyers, args=(
+            listing_id, crop_name, user.get("name"), user.get("phone"), user.get("whatsapp_number")
+        )).start()
 
         # Emit real-time event to all connected clients
         socketio.emit("listing_created", {
@@ -1374,16 +1384,21 @@ def get_suggestions():
     # Limit to top 5 suggestions
     return jsonify(suggestions[:5]), 200
 
+# Global cache for Mandi prices
+mandi_cache = {}
+
 @app.route("/api/mandi/<commodity>", methods=["GET"])
 def get_mandi_prices(commodity):
-    # Mock Agmarknet API response
-    # In real app: requests.get(f"https://api.agmarknet.gov.in/price?commodity={commodity}")
-    
-    
+    # Check cache first (1 hour TTL)
+    commodity_key = commodity.lower().strip()
+    if commodity_key in mandi_cache:
+        cached_data, cached_time = mandi_cache[commodity_key]
+        if (datetime.now() - cached_time).total_seconds() < 3600:
+            return jsonify({"mandi_prices": cached_data}), 200
+
     # Real Agmarknet API Integration
     try:
         api_key = os.getenv("DATA_GOV_API_KEY")
-        # Updated Resource ID per user request: 9ef84268-d588-465a-a308-a864a43d0070
         url = f"https://api.data.gov.in/resource/9ef84268-d588-465a-a308-a864a43d0070?api-key={api_key}&format=json&filters[commodity]={commodity}"
         
         response = requests.get(url, timeout=5)
@@ -1399,6 +1414,7 @@ def get_mandi_prices(commodity):
                 })
         
         if real_prices:
+            mandi_cache[commodity_key] = (real_prices[:10], datetime.now())
             return jsonify({"mandi_prices": real_prices[:10]}), 200 # Return top 10 results
             
     except Exception as e:
@@ -1471,10 +1487,20 @@ MARKET_DATA = {
     ],
 }
 
+# Global cache for Market prices
+market_price_cache = {}
+
 @app.route("/api/market-prices", methods=["GET"])
 def get_market_prices():
     """Return live simulated market prices for a given state."""
     state_code = request.args.get("state", "dl").lower().strip()
+    
+    # Check cache first (30 mins TTL)
+    if state_code in market_price_cache:
+        cached_data, cached_time = market_price_cache[state_code]
+        if (datetime.now() - cached_time).total_seconds() < 1800:
+            return jsonify({"data": cached_data, "state": state_code}), 200
+
     print(f"DEBUG: Market prices requested for state: {state_code}")
     
     # State mapping for Data.gov.in API
@@ -1538,6 +1564,7 @@ def get_market_prices():
                 
                 if formatted_data:
                     print(f"DEBUG: Returning {len(formatted_data)} refined records")
+                    market_price_cache[state_code] = (formatted_data, datetime.now())
                     return jsonify({"data": formatted_data, "state": state_code}), 200
         else:
             print(f"DEBUG: OGD API returned status {response.status_code}: {response.text}")
@@ -1549,6 +1576,7 @@ def get_market_prices():
     # Fallback to static MARKET_DATA if API fails or returns no data
     print(f"DEBUG: Using static fallback data for {state_code}")
     data = MARKET_DATA.get(state_code, MARKET_DATA["dl"])
+    market_price_cache[state_code] = (data, datetime.now())
     return jsonify({"data": data, "state": state_code}), 200
 
 # -------------------- WEATHER ENGINE LOGIC --------------------
@@ -2432,7 +2460,7 @@ def get_transactions():
             
         # For simplicity, we return all orders as "transactions"
         # In a real app, this might only be "completed" or "accepted" ones
-        orders = list(mongo.db.Orders.find(query).sort("created_at", -1))
+        orders = list(mongo.db.Orders.find(query).sort("created_at", -1).limit(50))
         
         result = []
         for o in orders:

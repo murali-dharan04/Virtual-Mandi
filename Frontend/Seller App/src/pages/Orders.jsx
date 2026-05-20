@@ -18,7 +18,9 @@ const Orders = () => {
     const [orders, setOrders] = useState([]);
     const [isInitialLoading, setIsInitialLoading] = useState(true);
     const [isSyncing, setIsSyncing] = useState(false);
-    const [isFetching, setIsFetching] = useState(false); // Guard for concurrent fetches
+    const [isFetching, setIsFetching] = useState(false);
+    const [error, setError] = useState(null);
+    const [filter, setFilter] = useState("all");
 
     const fetchOrders = async (isBackground = false) => {
         if (isFetching) return;
