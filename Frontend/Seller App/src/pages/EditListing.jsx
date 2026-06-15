@@ -1,28 +1,36 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
-import { 
-    ArrowLeft, Plus, Loader2, MapPin, 
+import {
+    ArrowLeft, Plus, Loader2, MapPin,
     Leaf, TrendingUp, Sparkles, X, Check, Trash2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { 
-    AlertDialog, AlertDialogAction, AlertDialogCancel, 
-    AlertDialogContent, AlertDialogDescription, 
-    AlertDialogFooter, AlertDialogHeader, AlertDialogTitle 
+import {
+    AlertDialog, AlertDialogAction, AlertDialogCancel,
+    AlertDialogContent, AlertDialogDescription,
+    AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { sellerApi } from "@/lib/api";
 import PageTransition from "@/components/PageTransition";
 
+const CROP_OPTIONS = {
+    "Vegetables": ["Tomato", "Onion", "Potato", "Green Chilli", "Cabbage", "Cauliflower", "Carrot", "Brinjal", "Lady Finger", "Spinach", "Capsicum"],
+    "Fruits": ["Mango", "Banana", "Apple", "Grapes", "Orange", "Papaya", "Guava", "Watermelon", "Pineapple", "Lemon"],
+    "Grains": ["Wheat", "Rice (Basmati)", "Rice (Non-Basmati)", "Maize", "Millet (Bajra)", "Sorghum (Jowar)", "Barley", "Oats"],
+    "Spices": ["Turmeric", "Cumin", "Coriander", "Black Pepper", "Cardamom", "Ginger", "Garlic", "Red Chilli", "Cinnamon"],
+    "Other": []
+};
+
 const EditListing = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { toast } = useToast();
-    
+
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -45,9 +53,20 @@ const EditListing = () => {
             try {
                 const data = await sellerApi.getListingById(id);
                 if (data && !data.error) {
+                    const fetchedCategory = data.category || "Grains";
+                    const fetchedCropName = data.cropName || "";
+                    let initialCropName = fetchedCropName;
+                    let initialCustomCropName = "";
+
+                    if (CROP_OPTIONS[fetchedCategory] && CROP_OPTIONS[fetchedCategory].length > 0 && !CROP_OPTIONS[fetchedCategory].includes(fetchedCropName)) {
+                        initialCropName = "Other";
+                        initialCustomCropName = fetchedCropName;
+                    }
+
                     setForm({
-                        cropName: data.cropName || "",
-                        category: data.category || "Grains",
+                        cropName: initialCropName,
+                        customCropName: initialCustomCropName,
+                        category: fetchedCategory,
                         quantity: data.quantity || "",
                         unit: data.unit || "kg",
                         pricePerUnit: data.pricePerUnit || "",
@@ -70,6 +89,16 @@ const EditListing = () => {
         fetchListing();
     }, [id, navigate, toast]);
 
+    // Handle category change to reset crop name if needed
+    const handleCategoryChange = (v) => {
+        setForm(prev => ({
+            ...prev,
+            category: v,
+            cropName: "", // Reset crop name when category changes
+            customCropName: ""
+        }));
+    };
+
     const handleImageChange = async (e) => {
         const files = Array.from(e.target.files || []);
         if (!files.length) return;
@@ -87,8 +116,8 @@ const EditListing = () => {
                 } else {
                     toast({ title: "Upload Failed", description: res.error || "Failed to upload image", variant: "destructive" });
                 }
-            } catch (err) { 
-                console.error(err); 
+            } catch (err) {
+                console.error(err);
                 toast({ title: "Upload Error", description: "Network error during upload.", variant: "destructive" });
             }
         }
@@ -100,7 +129,9 @@ const EditListing = () => {
     };
 
     const handleSubmit = async () => {
-        if (!form.cropName || !form.quantity || !form.pricePerUnit || !form.location) {
+        const finalCropName = form.cropName === "Other" ? form.customCropName : form.cropName;
+
+        if (!finalCropName || !form.quantity || !form.pricePerUnit || !form.location) {
             toast({ title: "Missing Info", description: "Please fill all required fields.", variant: "destructive" });
             return;
         }
@@ -115,6 +146,7 @@ const EditListing = () => {
         try {
             await sellerApi.updateListing(id, {
                 ...form,
+                cropName: finalCropName,
                 imageUrl: form.images[0] || "/placeholder.svg"
             });
             toast({ title: "Changes Saved!", description: "Your listing has been updated." });
@@ -148,12 +180,12 @@ const EditListing = () => {
     return (
         <PageTransition>
             <div className="max-w-4xl mx-auto pb-24 px-4 bg-[#f8f9fa] min-h-screen pt-4">
-                
+
                 {/* Header */}
                 <div className="flex items-center justify-between mb-8">
                     <div className="flex items-center gap-4">
-                        <button 
-                            onClick={() => navigate(-1)} 
+                        <button
+                            onClick={() => navigate(-1)}
                             className="h-10 w-10 bg-white rounded-full flex items-center justify-center shadow-sm border border-slate-100 hover:bg-slate-50 transition-colors shrink-0"
                         >
                             <ArrowLeft className="h-5 w-5 text-slate-600" />
@@ -163,11 +195,11 @@ const EditListing = () => {
                             <p className="text-xs font-medium text-slate-500 mt-1">Update the details of your crop listing below.</p>
                         </div>
                     </div>
-                    
-                    <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => setShowDeleteDialog(true)} 
+
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setShowDeleteDialog(true)}
                         className="h-10 w-10 rounded-full text-rose-500 hover:bg-rose-50 hover:text-rose-600 bg-white border border-rose-100 shadow-sm"
                     >
                         <Trash2 className="h-5 w-5" />
@@ -175,7 +207,7 @@ const EditListing = () => {
                 </div>
 
                 {/* Form Card */}
-                <motion.div 
+                <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden relative"
@@ -184,27 +216,26 @@ const EditListing = () => {
                     <div className="h-4 w-full bg-[#268051]"></div>
 
                     <div className="p-6 md:p-10 space-y-12">
-                        
+
                         {/* 1. PRODUCT PHOTO */}
                         <div className="space-y-4">
                             <Label className="uppercase text-[10px] font-black tracking-widest text-slate-500">
                                 Product Photo <span className="text-rose-500">*</span>
                             </Label>
-                            
+
                             <div className="flex flex-col md:flex-row gap-6 items-start">
                                 {/* Upload Box */}
                                 <div className="shrink-0 relative">
-                                    <input 
-                                        type="file" 
-                                        multiple 
-                                        accept="image/*" 
-                                        onChange={handleImageChange} 
-                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
+                                    <input
+                                        type="file"
+                                        multiple
+                                        accept="image/*"
+                                        onChange={handleImageChange}
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                         disabled={isUploadingImage || form.images.length >= 10}
                                     />
-                                    <div className={`h-32 w-48 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-colors ${
-                                        form.images.length >= 10 ? 'border-slate-200 bg-slate-50' : 'border-slate-300 hover:border-[#268051] hover:bg-emerald-50/50 cursor-pointer'
-                                    }`}>
+                                    <div className={`h-32 w-48 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-colors ${form.images.length >= 10 ? 'border-slate-200 bg-slate-50' : 'border-slate-300 hover:border-[#268051] hover:bg-emerald-50/50 cursor-pointer'
+                                        }`}>
                                         {isUploadingImage ? (
                                             <div className="flex flex-col items-center gap-2">
                                                 <Loader2 className="h-6 w-6 animate-spin text-[#268051]" />
@@ -218,7 +249,7 @@ const EditListing = () => {
                                         )}
                                     </div>
                                 </div>
-                                
+
 
                             </div>
 
@@ -260,24 +291,13 @@ const EditListing = () => {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-2">
                                     <Label className="uppercase text-[10px] font-black tracking-widest text-slate-500">
-                                        Crop Name <span className="text-rose-500">*</span>
-                                    </Label>
-                                    <Input 
-                                        placeholder="e.g. Basmati Rice, Tomatoes" 
-                                        value={form.cropName} 
-                                        onChange={e => setForm({...form, cropName: e.target.value})}
-                                        className="h-12 rounded-xl bg-[#f8f9fa] border-slate-200 focus:bg-white focus:border-[#268051] text-sm font-semibold"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="uppercase text-[10px] font-black tracking-widest text-slate-500">
                                         Category <span className="text-rose-500">*</span>
                                     </Label>
-                                    <Select value={form.category} onValueChange={v => setForm({...form, category: v})}>
-                                        <SelectTrigger className="h-12 rounded-xl bg-[#f8f9fa] border-slate-200 focus:bg-white focus:border-[#268051] text-sm font-semibold">
+                                    <Select value={form.category} onValueChange={handleCategoryChange}>
+                                        <SelectTrigger className="h-12 rounded-xl bg-[#f8f9fa] border-slate-200 focus:bg-white focus:border-[#268051] text-sm font-semibold text-slate-800">
                                             <SelectValue />
                                         </SelectTrigger>
-                                        <SelectContent className="rounded-xl">
+                                        <SelectContent position="popper" side="bottom" avoidCollisions={false} className="rounded-xl bg-white text-slate-800 shadow-xl max-h-[300px] overflow-y-auto z-[100]">
                                             <SelectItem value="Vegetables">Vegetables</SelectItem>
                                             <SelectItem value="Fruits">Fruits</SelectItem>
                                             <SelectItem value="Grains">Grains</SelectItem>
@@ -286,6 +306,46 @@ const EditListing = () => {
                                         </SelectContent>
                                     </Select>
                                 </div>
+
+                                <div className="space-y-2">
+                                    <Label className="uppercase text-[10px] font-black tracking-widest text-slate-500">
+                                        Crop Name <span className="text-rose-500">*</span>
+                                    </Label>
+                                    {!CROP_OPTIONS[form.category] || CROP_OPTIONS[form.category].length === 0 ? (
+                                        <Input
+                                            placeholder="e.g. Mixed Produce, Nuts"
+                                            value={form.cropName}
+                                            onChange={e => setForm({ ...form, cropName: e.target.value })}
+                                            className="h-12 rounded-xl bg-[#f8f9fa] border-slate-200 focus:bg-white focus:border-[#268051] text-sm font-semibold"
+                                        />
+                                    ) : (
+                                        <Select value={form.cropName} onValueChange={v => setForm({ ...form, cropName: v })}>
+                                            <SelectTrigger className="h-12 rounded-xl bg-[#f8f9fa] border-slate-200 focus:bg-white focus:border-[#268051] text-sm font-semibold text-slate-800">
+                                                <SelectValue placeholder="Select a crop" />
+                                            </SelectTrigger>
+                                            <SelectContent position="popper" side="bottom" avoidCollisions={false} className="rounded-xl bg-white text-slate-800 shadow-xl max-h-[300px] overflow-y-auto z-[100]">
+                                                {CROP_OPTIONS[form.category].map((crop) => (
+                                                    <SelectItem key={crop} value={crop}>{crop}</SelectItem>
+                                                ))}
+                                                <SelectItem value="Other">Other (Type below)</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    )}
+                                </div>
+
+                                {form.cropName === "Other" && (
+                                    <div className="space-y-2 md:col-span-2">
+                                        <Label className="uppercase text-[10px] font-black tracking-widest text-slate-500">
+                                            Custom Crop Name <span className="text-rose-500">*</span>
+                                        </Label>
+                                        <Input
+                                            placeholder="Enter crop name"
+                                            value={form.customCropName || ""}
+                                            onChange={e => setForm({ ...form, customCropName: e.target.value })}
+                                            className="h-12 rounded-xl bg-[#f8f9fa] border-slate-200 focus:bg-white focus:border-[#268051] text-sm font-semibold"
+                                        />
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -306,11 +366,11 @@ const EditListing = () => {
                                     <Label className="uppercase text-[10px] font-black tracking-widest text-slate-500">
                                         Quantity <span className="text-rose-500">*</span>
                                     </Label>
-                                    <Input 
-                                        type="number" 
-                                        placeholder="500" 
-                                        value={form.quantity} 
-                                        onChange={e => setForm({...form, quantity: e.target.value})}
+                                    <Input
+                                        type="number"
+                                        placeholder="500"
+                                        value={form.quantity}
+                                        onChange={e => setForm({ ...form, quantity: e.target.value })}
                                         className="h-12 rounded-xl bg-[#f8f9fa] border-slate-200 focus:bg-white focus:border-[#268051] text-sm font-semibold"
                                     />
                                 </div>
@@ -318,11 +378,11 @@ const EditListing = () => {
                                     <Label className="uppercase text-[10px] font-black tracking-widest text-slate-500">
                                         Unit (e.g. kg) <span className="text-rose-500">*</span>
                                     </Label>
-                                    <Select value={form.unit} onValueChange={v => setForm({...form, unit: v})}>
-                                        <SelectTrigger className="h-12 rounded-xl bg-[#f8f9fa] border-slate-200 focus:bg-white focus:border-[#268051] text-sm font-semibold">
+                                    <Select value={form.unit} onValueChange={v => setForm({ ...form, unit: v })}>
+                                        <SelectTrigger className="h-12 rounded-xl bg-[#f8f9fa] border-slate-200 focus:bg-white focus:border-[#268051] text-sm font-semibold text-slate-800">
                                             <SelectValue />
                                         </SelectTrigger>
-                                        <SelectContent className="rounded-xl">
+                                        <SelectContent position="popper" side="bottom" avoidCollisions={false} className="rounded-xl bg-white text-slate-800 shadow-xl max-h-[300px] overflow-y-auto z-[100]">
                                             <SelectItem value="kg">Kilograms (kg)</SelectItem>
                                             <SelectItem value="ton">Tons</SelectItem>
                                             <SelectItem value="quintal">Quintal</SelectItem>
@@ -337,11 +397,11 @@ const EditListing = () => {
                                     </Label>
                                     <div className="relative">
                                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₹</span>
-                                        <Input 
-                                            type="number" 
-                                            placeholder="65" 
-                                            value={form.pricePerUnit} 
-                                            onChange={e => setForm({...form, pricePerUnit: e.target.value})}
+                                        <Input
+                                            type="number"
+                                            placeholder="65"
+                                            value={form.pricePerUnit}
+                                            onChange={e => setForm({ ...form, pricePerUnit: e.target.value })}
                                             className="h-12 pl-8 rounded-xl bg-[#f8f9fa] border-slate-200 focus:bg-white focus:border-[#268051] text-sm font-semibold"
                                         />
                                     </div>
@@ -366,11 +426,11 @@ const EditListing = () => {
                                     <Label className="uppercase text-[10px] font-black tracking-widest text-slate-500">
                                         Quality Grade <span className="text-rose-500">*</span>
                                     </Label>
-                                    <Select value={form.qualityGrade} onValueChange={v => setForm({...form, qualityGrade: v})}>
-                                        <SelectTrigger className="h-12 rounded-xl bg-[#f8f9fa] border-slate-200 focus:bg-white focus:border-[#268051] text-sm font-semibold">
+                                    <Select value={form.qualityGrade} onValueChange={v => setForm({ ...form, qualityGrade: v })}>
+                                        <SelectTrigger className="h-12 rounded-xl bg-[#f8f9fa] border-slate-200 focus:bg-white focus:border-[#268051] text-sm font-semibold text-slate-800">
                                             <SelectValue />
                                         </SelectTrigger>
-                                        <SelectContent className="rounded-xl">
+                                        <SelectContent position="popper" side="bottom" avoidCollisions={false} className="rounded-xl bg-white text-slate-800 shadow-xl max-h-[300px] overflow-y-auto z-[100]">
                                             <SelectItem value="Grade A - Premium">Grade A – Premium</SelectItem>
                                             <SelectItem value="Grade B - Standard">Grade B – Standard</SelectItem>
                                             <SelectItem value="Grade C - Processing">Grade C – Processing</SelectItem>
@@ -382,11 +442,11 @@ const EditListing = () => {
                                     <Label className="uppercase text-[10px] font-black tracking-widest text-slate-500">
                                         Harvest Date <span className="text-rose-500">*</span>
                                     </Label>
-                                    <Input 
-                                        type="date" 
+                                    <Input
+                                        type="date"
                                         max={new Date().toISOString().split('T')[0]}
-                                        value={form.harvestDate} 
-                                        onChange={e => setForm({...form, harvestDate: e.target.value})}
+                                        value={form.harvestDate}
+                                        onChange={e => setForm({ ...form, harvestDate: e.target.value })}
                                         className="h-12 rounded-xl bg-[#f8f9fa] border-slate-200 focus:bg-white focus:border-[#268051] text-sm font-semibold"
                                     />
                                 </div>
@@ -398,10 +458,10 @@ const EditListing = () => {
                                 </Label>
                                 <div className="relative">
                                     <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-                                    <Input 
-                                        placeholder="e.g. Karnal, Haryana" 
-                                        value={form.location} 
-                                        onChange={e => setForm({...form, location: e.target.value})}
+                                    <Input
+                                        placeholder="e.g. Karnal, Haryana"
+                                        value={form.location}
+                                        onChange={e => setForm({ ...form, location: e.target.value })}
                                         className="h-12 pl-12 rounded-xl bg-[#f8f9fa] border-slate-200 focus:bg-white focus:border-[#268051] text-sm font-semibold"
                                     />
                                 </div>
@@ -410,15 +470,15 @@ const EditListing = () => {
 
                         {/* Bottom Actions */}
                         <div className="flex items-center gap-4 pt-4 max-w-2xl">
-                            <Button 
-                                onClick={handleSubmit} 
+                            <Button
+                                onClick={handleSubmit}
                                 disabled={isSaving}
                                 className="flex-1 h-14 bg-[#268051] hover:bg-[#1b5e3a] text-white rounded-2xl text-sm font-black uppercase tracking-widest shadow-lg shadow-emerald-500/20"
                             >
                                 {isSaving ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <Check className="h-5 w-5 mr-2" />}
                                 Save Changes
                             </Button>
-                            <Button 
+                            <Button
                                 onClick={() => navigate(-1)}
                                 variant="outline"
                                 className="px-8 h-14 bg-[#f8f9fa] hover:bg-slate-100 border-slate-200 text-slate-600 rounded-2xl text-sm font-bold shadow-sm"
